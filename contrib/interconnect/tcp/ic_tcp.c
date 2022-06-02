@@ -154,14 +154,21 @@ setupTCPListeningSocket(int backlog, int *listenerSocketFd, int32 *listenerPort)
 	 */
 	if (interconnect_address)
 	{
-		/*
-		 * Restrict what IP address we will listen on to just the one that was
-		 * used to create this QE session.
-		 */
-		hints.ai_flags |= AI_NUMERICHOST;
-		ereport(DEBUG1, (errmsg("binding to %s only", interconnect_address)));
-		if (gp_log_interconnect >= GPVARS_VERBOSITY_DEBUG)
-			ereport(DEBUG4, (errmsg("binding listener %s", interconnect_address)));
+		if (Gp_interconnect_address_type == INTERCONNECT_ADDRESS_TYPE_UNICAST)
+		{
+			Assert(interconnect_address && strlen(interconnect_address) > 0);
+			hints.ai_flags |= AI_NUMERICHOST;
+			ereportif(gp_log_interconnect >= GPVARS_VERBOSITY_DEBUG, DEBUG3,
+					(errmsg("getaddrinfo called with unicast address: %s",
+							interconnect_address)));
+		}
+		else
+		{
+			Assert(interconnect_address == NULL);
+			hints.ai_flags |= AI_PASSIVE;
+			ereportif(gp_log_interconnect >= GPVARS_VERBOSITY_DEBUG, DEBUG3,
+					(errmsg("getaddrinfo called with wildcard address")));
+		}
 	}
 
 	s = getaddrinfo(interconnect_address, service, &hints, &addrs);
