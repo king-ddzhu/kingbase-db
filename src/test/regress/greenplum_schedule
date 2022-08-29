@@ -321,4 +321,6 @@ test: am_encoding
 # tests of directory table
 test: directory_table
 
+# subtransaction overflow test
+test: subtrx_overflow
 # end of tests
