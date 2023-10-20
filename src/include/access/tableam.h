@@ -42,6 +42,13 @@ struct VacuumParams;
 struct ValidateIndexState;
 
 /*
+ * Flags represented the supported features of scan.
+ *
+ * Reserve first 8 bits for public.
+ */
+#define SCAN_SUPPORT_RUNTIME_FILTER (1 << 0) /* support runtime filter scan */
+
+/*
  * Bitmask values for the flags argument to the scan_begin callback.
  */
 typedef enum ScanOptions
