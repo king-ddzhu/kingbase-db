@@ -430,6 +430,8 @@ bool		gp_enable_global_deadlock_detector = false;
 bool gp_enable_predicate_pushdown;
 int  gp_predicate_pushdown_sample_rows;
 
+bool gp_enable_runtime_filter_pushdown;
+
 bool        enable_offload_entry_to_qe = false;
 bool enable_answer_query_using_materialized_views = false;
 
@@ -3002,6 +3004,15 @@ struct config_bool ConfigureNamesBool_gp[] =
 			GUC_EXPLAIN
 		},
 		&enable_answer_query_using_materialized_views,
+		false,
+		NULL, NULL, NULL
+	},
+	{
+		{"gp_enable_runtime_filter_pushdown", PGC_USERSET, DEVELOPER_OPTIONS,
+			gettext_noop("Try to push the hash table of hash join to the seqscan or AM as bloom filter."),
+			NULL
+		},
+		&gp_enable_runtime_filter_pushdown,
 		false,
 		NULL, NULL, NULL
 	},
