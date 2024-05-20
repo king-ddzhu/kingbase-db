@@ -2548,6 +2548,15 @@ readNodeBinary(void)
 			case T_CreateSchemaStmt:
 				return_value = _readCreateSchemaStmt();
 				break;
+			case T_CreateTagStmt:
+				return_value = _readCreateTagStmt();
+				break;
+			case T_AlterTagStmt:
+				return_value = _readAlterTagStmt();
+				break;
+			case T_DropTagStmt:
+				return_value = _readDropTagStmt();
+				break;
 			case T_CreatePLangStmt:
 				return_value = _readCreatePLangStmt();
 				break;

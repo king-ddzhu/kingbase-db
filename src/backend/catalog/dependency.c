@@ -58,6 +58,8 @@
 #include "catalog/pg_statistic_ext.h"
 #include "catalog/pg_subscription.h"
 #include "catalog/pg_tablespace.h"
+#include "catalog/pg_tag.h"
+#include "catalog/pg_tag_description.h"
 #include "catalog/pg_task.h"
 #include "catalog/pg_transform.h"
 #include "catalog/pg_trigger.h"
@@ -208,6 +210,8 @@ static const Oid object_classes[] = {
 	DirectoryTableRelationId,	/* OCLASS_DIRECTORY_TABLE */
 	StorageServerRelationId,	/* OCLASS_STORAGE_SERVER */
 	StorageUserMappingRelationId,	/* OCLASS_STORAGE_USER_MAPPING */
+	TagRelationId,				/* OCLASS_TAG */
+	TagDescriptionRelationId,	/* OCLASS_TAG_DESCRIPTION */
 	ExtprotocolRelationId,		/* OCLASS_EXTPROTOCOL */
 	TaskRelationId				/* OCLASS_TASK */
 };

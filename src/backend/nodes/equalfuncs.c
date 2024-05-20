@@ -2485,6 +2485,37 @@ _equalCreateSchemaStmt(const CreateSchemaStmt *a, const CreateSchemaStmt *b)
 }
 
 static bool
+_equalCreateTagStmt(const CreateTagStmt *a, const CreateTagStmt *b)
+{
+	COMPARE_STRING_FIELD(tag_name);
+	COMPARE_SCALAR_FIELD(missing_ok);
+	COMPARE_NODE_FIELD(allowed_values);
+	
+	return true;
+}
+
+static bool
+_equalAlterTagStmt(const AlterTagStmt *a, const AlterTagStmt *b)
+{
+	COMPARE_STRING_FIELD(tag_name);
+	COMPARE_SCALAR_FIELD(action);
+	COMPARE_NODE_FIELD(tag_values);
+	COMPARE_SCALAR_FIELD(missing_ok);
+	COMPARE_SCALAR_FIELD(unset);
+	
+	return true;
+}
+
+static bool
+_equalDropTagStmt(const DropTagStmt *a, const DropTagStmt *b)
+{
+	COMPARE_NODE_FIELD(tags);
+	COMPARE_SCALAR_FIELD(missing_ok);
+	
+	return true;
+}
+
+static bool
 _equalCreateConversionStmt(const CreateConversionStmt *a, const CreateConversionStmt *b)
 {
 	COMPARE_NODE_FIELD(conversion_name);
@@ -4095,6 +4126,15 @@ equal(const void *a, const void *b)
 			break;
 		case T_CreateSchemaStmt:
 			retval = _equalCreateSchemaStmt(a, b);
+			break;
+		case T_CreateTagStmt:
+			retval = _equalCreateTagStmt(a, b);
+			break;
+		case T_AlterTagStmt:
+			retval = _equalAlterTagStmt(a, b);
+			break;
+		case T_DropTagStmt:
+			retval = _equalDropTagStmt(a, b);
 			break;
 		case T_CreateConversionStmt:
 			retval = _equalCreateConversionStmt(a, b);

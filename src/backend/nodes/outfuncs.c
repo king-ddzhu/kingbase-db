@@ -5031,6 +5031,15 @@ outNode(StringInfo str, const void *obj)
 			case T_CreateSchemaStmt:
 				_outCreateSchemaStmt(str, obj);
 				break;
+			case T_CreateTagStmt:
+				_outCreateTagStmt(str, obj);
+				break;
+			case T_AlterTagStmt:
+				_outAlterTagStmt(str, obj);
+				break;
+			case T_DropTagStmt:
+				_outDropTagStmt(str, obj);
+				break;
 			case T_CreatePLangStmt:
 				_outCreatePLangStmt(str, obj);
 				break;

@@ -1947,6 +1947,8 @@ typedef enum ObjectType
 	OBJECT_TABLE,
 	OBJECT_EXTPROTOCOL,
 	OBJECT_TABLESPACE,
+	OBJECT_TAG,
+//	OBJECT_TAG_DESCRIPTION,
 	OBJECT_TRANSFORM,
 	OBJECT_TRIGGER,
 	OBJECT_TSCONFIGURATION,
@@ -1995,6 +1997,20 @@ typedef struct CreateSchemaStmt
 	bool		pop_search_path;	/* true for pop search path only (internal only) */
 } CreateSchemaStmt;
 
+/* ----------------------
+ *		Create Tag Statement
+ *
+ * NOTE: the allowed_values list contains all the allowed values for this tag.
+ * ----------------------
+ */
+typedef struct CreateTagStmt
+{
+	NodeTag 	type;
+	char 	   *tag_name;	/* the name of the tag to create */
+	bool		missing_ok;	/* skip error if table missing */
+	List 	   *allowed_values;	/* allowed values list for this tag */
+} CreateTagStmt;
+
 typedef enum DropBehavior
 {
 	DROP_RESTRICT,				/* drop fails if any dependent objects */
@@ -2031,6 +2047,16 @@ typedef struct AlterTableStmt
 	List	   *wqueue;
 	bool	   is_internal;     /* GPDB: set for internal generated alter table stmt */
 } AlterTableStmt;
+
+typedef struct AlterTagStmt
+{
+	NodeTag		type;
+	char 	   *tag_name;
+	int			action;
+	List	   *tag_values;
+	bool		missing_ok;
+	bool		unset;
+} AlterTagStmt;
 
 typedef enum AlterTableType
 {
@@ -2744,6 +2770,13 @@ typedef struct AlterTableMoveAllStmt
 	char	   *new_tablespacename;
 	bool		nowait;
 } AlterTableMoveAllStmt;
+
+typedef struct DropTagStmt
+{
+	NodeTag		type;
+	List	   *tags;
+	bool		missing_ok;
+} DropTagStmt;
 
 /* ----------------------
  *		Create/Alter/Drop Task Statements

@@ -321,10 +321,10 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 		RetrieveStmt CreateTaskStmt AlterTaskStmt DropTaskStmt
 
 /* GPDB-specific commands */
-%type <node>	AlterProfileStmt AlterQueueStmt AlterResourceGroupStmt
+%type <node>	AlterProfileStmt AlterQueueStmt AlterResourceGroupStmt AlterTagStmt
 		CreateExternalStmt
-		CreateProfileStmt CreateQueueStmt CreateResourceGroupStmt
-		DropProfileStmt DropQueueStmt DropResourceGroupStmt
+		CreateProfileStmt CreateQueueStmt CreateResourceGroupStmt CreateTagStmt
+		DropProfileStmt DropQueueStmt DropResourceGroupStmt DropTagStmt
 		ExtTypedesc OptSingleRowErrorHandling ExtSingleRowErrorHandling
 
 %type <node>    deny_login_role deny_interval deny_point deny_day_specifier
@@ -377,6 +377,7 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 
 %type <list>	OptRoleList AlterOptRoleList
 %type <list>    OptProfileList
+%type <list>	OptTagValuesList
 %type <defelt>	CreateOptRoleElem AlterOptRoleElem
 %type <defelt>	AlterOnlyOptRoleElem
 %type <defelt>  OptProfileElem
@@ -840,7 +841,7 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 
 /* GPDB-added keywords, in alphabetical order */
 %token <keyword>
-	ACCOUNT ACTIVE
+	ACCOUNT ACTIVE ALLOWED_VALUES
 
 	CONTAINS COORDINATOR CPUSET CPU_RATE_LIMIT
 
@@ -884,6 +885,8 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 	THRESHOLD
 
 	UNLOCK_P
+	
+	UNSET_P
 
 	VALIDATION
 
@@ -1407,6 +1410,7 @@ stmt:
 			| AlterStorageServerStmt
 			| AlterSystemStmt
 			| AlterTableStmt
+			| AlterTagStmt
 			| AlterTblSpcStmt
 			| AlterCompositeTypeStmt
 			| AlterPublicationStmt
@@ -1459,6 +1463,7 @@ stmt:
 			| CreateStorageServerStmt
 			| CreateStorageUserMappingStmt
 			| CreateTableSpaceStmt
+			| CreateTagStmt
 			| CreateTaskStmt
 			| CreateTransformStmt
 			| CreateTrigStmt
@@ -1483,6 +1488,7 @@ stmt:
 			| DropStmt
 			| DropSubscriptionStmt
 			| DropTableSpaceStmt
+			| DropTagStmt
 			| DropTaskStmt
 			| DropTransformStmt
 			| DropRoleStmt
@@ -2376,6 +2382,119 @@ schema_stmt:
 			| CreateTrigStmt
 			| GrantStmt
 			| ViewStmt
+		;
+
+
+/*****************************************************************************
+ *
+ * Create a new Postgres DBMS Tag
+ *
+ *****************************************************************************/
+
+CreateTagStmt:
+			CREATE TAG name
+				{
+					CreateTagStmt *n = makeNode(CreateTagStmt);
+					n->tag_name = $3;
+					n->missing_ok = false;
+					n->allowed_values = NIL;
+					$$ = (Node *)n;
+				}
+			| CREATE TAG IF_P NOT EXISTS name
+				{
+					CreateTagStmt *n = makeNode(CreateTagStmt);
+					n->tag_name = $6;
+					n->missing_ok = true;
+					n->allowed_values = NIL;
+					$$ = (Node *)n;
+				}
+			| CREATE TAG name ALLOWED_VALUES OptTagValuesList
+				{
+					CreateTagStmt *n = makeNode(CreateTagStmt);
+					n->tag_name = $3;
+					n->missing_ok = false;
+					n->allowed_values = $5;
+					$$ = (Node *)n;
+				}
+			| CREATE TAG IF_P NOT EXISTS name ALLOWED_VALUES OptTagValuesList
+				{
+					CreateTagStmt *n = makeNode(CreateTagStmt);
+					n->tag_name = $6;
+					n->missing_ok = true;
+					n->allowed_values = $8;
+					$$ = (Node *)n;
+				}
+		;
+
+
+/*****************************************************************************
+ *
+ * Alter a postgresql DBMS Tag
+ *
+ *****************************************************************************/
+
+AlterTagStmt:
+			ALTER TAG name add_drop ALLOWED_VALUES OptTagValuesList
+				{
+					AlterTagStmt *n = makeNode(AlterTagStmt);
+					n->missing_ok = false;
+					n->tag_name = $3;
+					n->action = $4;
+					n->tag_values = $6;
+					n->unset = false;
+					$$ = (Node *)n;
+				}
+			| ALTER TAG IF_P NOT EXISTS name add_drop ALLOWED_VALUES OptTagValuesList
+				{
+					AlterTagStmt *n = makeNode(AlterTagStmt);
+					n->missing_ok = true;
+					n->tag_name = $6;
+					n->action = $7;
+					n->tag_values = $9;
+					n->unset = false;
+					$$ = (Node *)n;
+				}
+			| ALTER TAG name UNSET_P ALLOWED_VALUES
+				{
+					AlterTagStmt *n = makeNode(AlterTagStmt);
+					n->unset = true;
+					$$ = (Node *)n;
+				}
+		;
+
+
+/*****************************************************************************
+ *
+ * Drop a postgresql DBMS Tag
+ *
+ * XXX Ideally this would have CASCADE/RESTRICT options, but a profile
+ * might be attached by users in multiple databases, using CASCADE will drop
+ * users meanwhile which is unreasonable.  So we always behave as RESTRICT.
+ *****************************************************************************/
+
+DropTagStmt:
+			DROP TAG name_list
+				{
+					DropTagStmt *n = makeNode(DropTagStmt);
+					n->tags = $3;
+					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
+			| DROP TAG IF_P EXISTS name_list
+				{
+					DropTagStmt *n = makeNode(DropTagStmt);
+					n->tags = $5;
+					n->missing_ok = true;
+					$$ = (Node *)n;
+				}
+		;
+
+/*
+ * List of allowed values for Tag.
+ */
+OptTagValuesList:
+			OptTagValuesList ',' Sconst         { $$ = lappend($1, makeString($3)); }
+			| Sconst                            { $$ = list_make1(makeString($1)); }
 		;
 
 
@@ -12124,6 +12243,24 @@ RenameStmt: ALTER AGGREGATE aggregate_with_argtypes RENAME TO name
                     n->missing_ok = false;
                     $$ = (Node *)n;
                 }
+			| ALTER TAG name RENAME TO name
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_TAG;
+					n->subname = $3;
+					n->newname = $6;
+					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
+			| ALTER TAG IF_P EXISTS name RENAME TO name
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_TAG;
+					n->subname = $5;
+					n->newname = $8;
+					n->missing_ok = true;
+					$$ = (Node *)n;
+				}
 		;
 
 opt_column: COLUMN
@@ -18946,6 +19083,7 @@ unreserved_keyword:
 			| ADMIN
 			| AFTER
 			| AGGREGATE
+			| ALLOWED_VALUES
 			| ALSO
 			| ALTER
 			| ALWAYS
@@ -19280,6 +19418,7 @@ unreserved_keyword:
 			| UNLISTEN
 			| UNLOCK_P
 			| UNLOGGED
+			| UNSET_P
 			| UNTIL
 			| UPDATE
 			| VACUUM
@@ -19835,6 +19974,7 @@ bare_label_keyword:
 			| AFTER
 			| AGGREGATE
 			| ALL
+			| ALLOWED_VALUES
 			| ALSO
 			| ALTER
 			| ALWAYS
@@ -20276,6 +20416,7 @@ bare_label_keyword:
 			| UNLISTEN
 			| UNLOCK_P
 			| UNLOGGED
+			| UNSET_P
 			| UNTIL
 			| UPDATE
 			| USER

@@ -1369,6 +1369,37 @@ _outCreateSchemaStmt(StringInfo str, const CreateSchemaStmt *node)
 }
 
 static void
+_outCreateTagStmt(StringInfo str, const CreateTagStmt *node)
+{
+	WRITE_NODE_TYPE("CREATETAGSTMT");
+	
+	WRITE_STRING_FIELD(tag_name);
+	WRITE_BOOL_FIELD(missing_ok);
+	WRITE_NODE_FIELD(allowed_values);
+}
+
+static void
+_outAlterTagStmt(StringInfo str, const AlterTagStmt *node)
+{
+	WRITE_NODE_TYPE("ALTERTAGSTMT");
+	
+	WRITE_STRING_FIELD(tag_name);
+	WRITE_INT_FIELD(action);
+	WRITE_NODE_FIELD(tag_values);
+	WRITE_BOOL_FIELD(missing_ok);
+	WRITE_BOOL_FIELD(unset);
+}
+
+static void
+_outDropTagStmt(StringInfo str, const DropTagStmt *node)
+{
+	WRITE_NODE_TYPE("DROPTAGSTMT");
+	
+	WRITE_NODE_FIELD(tags);
+	WRITE_BOOL_FIELD(missing_ok);
+}
+
+static void
 _outCreatePLangStmt(StringInfo str, const CreatePLangStmt *node)
 {
 	WRITE_NODE_TYPE("CREATEPLANGSTMT");

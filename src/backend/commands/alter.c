@@ -58,6 +58,7 @@
 #include "commands/subscriptioncmds.h"
 #include "commands/tablecmds.h"
 #include "commands/tablespace.h"
+#include "commands/tag.h"
 #include "commands/trigger.h"
 #include "commands/typecmds.h"
 #include "commands/user.h"
@@ -359,6 +360,9 @@ ExecRenameStmt_internal(RenameStmt *stmt)
 		case OBJECT_TABLESPACE:
 			return RenameTableSpace(stmt->subname, stmt->newname);
 
+		case OBJECT_TAG:
+			return RenameTag(stmt->subname, stmt->newname);
+			
 		case OBJECT_TABLE:
 		case OBJECT_SEQUENCE:
 		case OBJECT_VIEW:

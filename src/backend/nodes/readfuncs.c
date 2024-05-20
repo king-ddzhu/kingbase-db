@@ -3203,6 +3203,12 @@ parseNodeString(void)
 		return_value = _readCreateProfileStmt();
 	else if (MATCHX("CREATESCHEMASTMT"))
 		return_value = _readCreateSchemaStmt();
+	else if (MATCHX("CREATETAGSTMT"))
+		return_value = _readCreateTagStmt();
+	else if (MATCHX("ALTERTAGSTMT"))
+		return_value = _readAlterTagStmt();
+	else if (MATCHX("DROPTAGSTMT"))
+		return_value = _readDropTagStmt();
 	else if (MATCHX("CREATESEQSTMT"))
 		return_value = _readCreateSeqStmt();
 	else if (MATCHX("CREATETRANSFORMSTMT"))

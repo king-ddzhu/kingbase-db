@@ -5402,6 +5402,43 @@ _copyCreateSchemaStmt(const CreateSchemaStmt *from)
 	return newnode;
 }
 
+static CreateTagStmt *
+_copyCreateTagStmt(const CreateTagStmt *from)
+{
+	CreateTagStmt *newnode = makeNode(CreateTagStmt);
+	
+	COPY_STRING_FIELD(tag_name);
+	COPY_SCALAR_FIELD(missing_ok);
+	COPY_NODE_FIELD(allowed_values);
+	
+	return newnode;
+}
+
+static AlterTagStmt *
+_copyAlterTagStmt(const AlterTagStmt *from)
+{
+	AlterTagStmt *newnode = makeNode(AlterTagStmt);
+	
+	COPY_STRING_FIELD(tag_name);
+	COPY_SCALAR_FIELD(action);
+	COPY_NODE_FIELD(tag_values);
+	COPY_SCALAR_FIELD(missing_ok);
+	COPY_SCALAR_FIELD(unset);
+	
+	return newnode;
+}
+
+static DropTagStmt *
+_copyDropTagStmt(const DropTagStmt *from)
+{
+	DropTagStmt *newnode = makeNode(DropTagStmt);
+	
+	COPY_NODE_FIELD(tags);
+	COPY_SCALAR_FIELD(missing_ok);
+	
+	return newnode;
+}
+
 static CreateConversionStmt *
 _copyCreateConversionStmt(const CreateConversionStmt *from)
 {
@@ -6945,6 +6982,15 @@ copyObjectImpl(const void *from)
 			break;
 		case T_CreateSchemaStmt:
 			retval = _copyCreateSchemaStmt(from);
+			break;
+		case T_CreateTagStmt:
+			retval = _copyCreateTagStmt(from);
+			break;
+		case T_AlterTagStmt:
+			retval = _copyAlterTagStmt(from);
+			break;
+		case T_DropTagStmt:
+			retval = _copyDropTagStmt(from);
 			break;
 		case T_CreateConversionStmt:
 			retval = _copyCreateConversionStmt(from);

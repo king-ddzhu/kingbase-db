@@ -91,6 +91,7 @@ AlterStorageUserMappingStmt
 AlterSubscriptionStmt
 AlterSubscriptionType
 AlterSystemStmt
+AlterTagStmt
 AlterTSConfigType
 AlterTSConfigurationStmt
 AlterTSDictionaryStmt
@@ -491,6 +492,7 @@ CreateStorageUserMappingStmt
 CreateSubscriptionStmt
 CreateTableAsStmt
 CreateTableSpaceStmt
+CreateTagStmt
 CreateTransformStmt
 CreateTrigStmt
 CreateUserMappingStmt
@@ -580,6 +582,7 @@ DropStorageServer
 DropStorageUserMappingStmt
 DropSubscriptionStmt
 DropTableSpaceStmt
+DropTagStmt
 DropUserMappingStmt
 DropdbStmt
 DumpComponents

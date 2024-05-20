@@ -906,6 +906,43 @@ _readCreateSchemaStmt(void)
 	READ_DONE();
 }
 
+static CreateTagStmt *
+_readCreateTagStmt(void)
+{
+	READ_LOCALS(CreateTagStmt);
+	
+	READ_STRING_FIELD(tag_name);
+	READ_BOOL_FIELD(missing_ok);
+	READ_NODE_FIELD(allowed_values);
+	
+	READ_DONE();
+}
+
+static AlterTagStmt *
+_readAlterTagStmt(void)
+{
+	READ_LOCALS(AlterTagStmt);
+	
+	READ_STRING_FIELD(tag_name);
+	READ_INT_FIELD(action);
+	READ_NODE_FIELD(tag_values);
+	READ_BOOL_FIELD(missing_ok);
+	READ_BOOL_FIELD(unset);
+	
+	READ_DONE();
+}
+
+static DropTagStmt *
+_readDropTagStmt(void)
+{
+	READ_LOCALS(DropTagStmt);
+	
+	READ_NODE_FIELD(tags);
+	READ_BOOL_FIELD(missing_ok);
+	
+	READ_DONE();
+}
+
 static CreateSeqStmt *
 _readCreateSeqStmt(void)
 {

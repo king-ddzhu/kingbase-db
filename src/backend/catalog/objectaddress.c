@@ -61,6 +61,8 @@
 #include "catalog/pg_statistic_ext.h"
 #include "catalog/pg_subscription.h"
 #include "catalog/pg_tablespace.h"
+#include "catalog/pg_tag.h"
+#include "catalog/pg_tag_description.h"
 #include "catalog/pg_task.h"
 #include "catalog/pg_transform.h"
 #include "catalog/pg_trigger.h"
@@ -80,6 +82,7 @@
 #include "commands/resgroupcmds.h"
 #include "commands/storagecmds.h"
 #include "commands/tablespace.h"
+#include "commands/tag.h"
 #include "commands/trigger.h"
 #include "foreign/foreign.h"
 #include "funcapi.h"
@@ -701,7 +704,37 @@ static const ObjectPropertyType ObjectProperty[] =
 		Anum_pg_extprotocol_ptcacl,
 		OBJECT_EXTPROTOCOL,
 		true
-	}
+	},
+	
+	{
+		"tag",
+		TagRelationId,
+		TagOidIndexId,
+		TAGOID,
+		TAGNAME,
+		Anum_pg_tag_oid,
+		Anum_pg_tag_tagname,
+		InvalidAttrNumber,
+		Anum_pg_tag_tagowner,
+		InvalidAttrNumber,
+		OBJECT_TAG,
+		true
+	},
+//	
+//	{
+//		"tag description",
+//		TagDescriptionRelationId,
+//		TagDescriptionTagidIndexId,
+//		TAGDESCRIPTIONTAGID,
+//		-1,
+//		Anum_pg_tag_description_tagid,
+//		InvalidAttrNumber,
+//		InvalidAttrNumber,
+//		InvalidAttrNumber,
+//		InvalidAttrNumber,
+//		OBJECT_TAG_DESCRIPTION,
+//		true
+//	}
 };
 
 /*
@@ -942,6 +975,10 @@ static const struct object_type_map
 	/* OCLASS_STORAGE_USER_MAPPING */
 	{
 		"storage user mapping", OBJECT_STORAGE_USER_MAPPING
+	},
+	/* OCLASS_TAG */
+	{
+		"tag", OBJECT_TAG
 	}
 };
 
@@ -1104,6 +1141,7 @@ get_object_address(ObjectType objtype, Node *object,
 			case OBJECT_DATABASE:
 			case OBJECT_EXTENSION:
 			case OBJECT_TABLESPACE:
+			case OBJECT_TAG:
 			case OBJECT_ROLE:
 			case OBJECT_SCHEMA:
 			case OBJECT_LANGUAGE:
@@ -1381,6 +1419,11 @@ get_object_address_unqualified(ObjectType objtype,
 		case OBJECT_TABLESPACE:
 			address.classId = TableSpaceRelationId;
 			address.objectId = get_tablespace_oid(name, missing_ok);
+			address.objectSubId = 0;
+			break;
+		case OBJECT_TAG:
+			address.classId = TagRelationId;
+			address.objectId = get_tag_oid(name, missing_ok);
 			address.objectSubId = 0;
 			break;
 		case OBJECT_ROLE:
@@ -2425,6 +2468,7 @@ pg_get_object_address(PG_FUNCTION_ARGS)
 		case OBJECT_SCHEMA:
 		case OBJECT_SUBSCRIPTION:
 		case OBJECT_TABLESPACE:
+		case OBJECT_TAG:
 		case OBJECT_EXTPROTOCOL:
 		case OBJECT_RESGROUP:
 		case OBJECT_RESQUEUE:
@@ -2685,6 +2729,11 @@ check_object_ownership(Oid roleid, ObjectType objtype, ObjectAddress address,
 			if (!pg_tablespace_ownercheck(address.objectId, roleid))
 				aclcheck_error(ACLCHECK_NOT_OWNER, objtype,
 							   strVal((Value *) object));
+			break;
+		case OBJECT_TAG:
+			if (!pg_tag_ownercheck(address.objectId, roleid))
+				aclcheck_error(ACLCHECK_NOT_OWNER, objtype,
+				   			   strVal((Value *) object));
 			break;
 		case OBJECT_TSDICTIONARY:
 			if (!pg_ts_dict_ownercheck(address.objectId, roleid))
