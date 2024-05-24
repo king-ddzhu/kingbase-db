@@ -2501,7 +2501,6 @@ OptTagValuesList:
 
 OptTagOptList:
 		TAG '(' TagOptList ')'                          { $$ = $3; }
-		| WITH TAG '(' TagOptList ')'                   { $$ = $4; }
 		| /*EMPTY*/                                     { $$ = NIL; }
 	;
 

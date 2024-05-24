@@ -29,13 +29,14 @@
  */
 CATALOG(pg_tag_description,6485,TagDescriptionRelationId) BKI_SHARED_RELATION BKI_ROWTYPE_OID(6486,TagDescriptionRelation_Rowtype_Id) BKI_SCHEMA_MACRO
 {
+	Oid			oid		BKI_FORCE_NOT_NULL;				/* OID of this tag description */
 	Oid			dbid	BKI_LOOKUP_OPT(pg_database);	/* Oid of database */
 	Oid			classid	BKI_LOOKUP_OPT(pg_class);		/* OID of table containing object */
 	Oid 		objid;			/* OID of object itself */
 	int32 		objsubid;		/* column number, or 0 if not used */
 	Oid 		tagid	BKI_LOOKUP_OPT(pg_tag);			/* Oid of tag */
 #ifdef CATALOG_VARLEN			/* variable-length fields start here */
-	text		tagvalue[1];	/* tag values for this object */
+	text		tagvalues[1];	/* tag values for this object */
 #endif
 } FormData_pg_tag_description;
 
@@ -46,9 +47,11 @@ CATALOG(pg_tag_description,6485,TagDescriptionRelationId) BKI_SHARED_RELATION BK
  */
 typedef FormData_pg_tag_description *Form_pg_tag_description;
 
-DECLARE_UNIQUE_INDEX_PKEY(pg_tag_description_d_c_o_o_index, 6487, on pg_tag_description using btree(dbid oid_ops, classid oid_ops, objid oid_ops, objsubid int4_ops));
+DECLARE_UNIQUE_INDEX_PKEY(pg_tag_description_d_c_o_o_t_index, 6487, on pg_tag_description using btree(dbid oid_ops, classid oid_ops, objid oid_ops, objsubid int4_ops, tagid oid_ops));
 #define TagDescriptionIndexId	6487
-DECLARE_UNIQUE_INDEX(pg_tag_description_tagid_index, 6488, on pg_tag_description using btree(tagid oid_ops));
-#define TagDescriptionTagidIndexId	6488
+DECLARE_UNIQUE_INDEX(pg_tag_description_oid_index, 6488, on pg_tag_description using btree(oid oid_ops));
+#define TagDescriptionOidIndexId	6488
+DECLARE_INDEX(pg_tag_description_tagid_index, 6489, on pg_tag_description using btree(tagid oid_ops));
+#define TagDescriptionTagidIndexId	6489
 
 #endif							/* PG_TAG_DESCRIPTION_H */

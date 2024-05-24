@@ -20,6 +20,7 @@
 #include "access/relscan.h"
 #include "access/skey.h"
 #include "access/table.h"
+#include "access/xact.h"
 #include "catalog/catalog.h"
 #include "catalog/dependency.h"
 #include "catalog/heap.h"
@@ -31,6 +32,7 @@
 #include "catalog/pg_type.h"
 #include "cdb/cdbdisp_query.h"
 #include "cdb/cdbvars.h"
+#include "commands/defrem.h"
 #include "commands/tag.h"
 #include "storage/lmgr.h"
 #include "utils/acl.h"
@@ -43,7 +45,7 @@
 #define TAG_VALUES_ACTION_ADD	1
 #define TAG_VALUES_ACTION_DROP	-1
 
-static Datum transformTagAllowedValues(int action, Datum oldvalues, List *allowed_values);
+static Datum transformTagValues(int action, Datum oldvalues, List *allowed_values);
 static List *untransformTagValues(Datum allowed_values);
 static Datum valueListToArray(List *allowed_values);
 
@@ -128,9 +130,9 @@ CreateTag(CreateTagStmt *stmt)
 	values[Anum_pg_tag_tagowner - 1] =
 		ObjectIdGetDatum(ownerId);
 
-	tag_values = transformTagAllowedValues(TAG_VALUES_ACTION_ADD,
-										   PointerGetDatum(NULL),
-										   stmt->allowed_values);
+	tag_values = transformTagValues(TAG_VALUES_ACTION_ADD,
+								 	PointerGetDatum(NULL),
+								 	stmt->allowed_values);
 
 	if (PointerIsValid(DatumGetPointer(tag_values)))
 		values[Anum_pg_tag_allowed_values - 1] = tag_values;
@@ -227,9 +229,9 @@ AlterTag(AlterTagStmt *stmt)
 			datum = PointerGetDatum(NULL);
 
 		/* Prepare the values array */
-		datum = transformTagAllowedValues(stmt->action,
-										  datum,
-										  stmt->tag_values);
+		datum = transformTagValues(stmt->action,
+								   datum,
+								   stmt->tag_values);
 	}
 	
 	if (stmt->unset)
@@ -428,9 +430,195 @@ RenameTag(const char *oldname, const char *newname)
 	return address;
 }
 
+/*
+ * Add tag
+ *
+ * Add tag for database object such as database, warehouse, table etc.
+ */
+void
+AddTagsForObject(List *tags,
+				 Oid dbid,
+				 Oid classid,
+				 Oid objid,
+				 Oid objsubid,
+				 char *objname)
+{
+	Relation	tag_rel;
+	Relation	tag_desc_rel;
+	ListCell	*cell;
+
+	tag_rel = table_open(TagRelationId, RowExclusiveLock);
+	tag_desc_rel = table_open(TagDescriptionRelationId, RowExclusiveLock);
+
+	foreach(cell, tags)
+	{
+		Oid		tag_desc_oid;
+		DefElem *def;
+		HeapTuple	tuple;
+		HeapTuple	desc_tuple;
+		HeapTuple	new_tuple;
+		Form_pg_tag tagform;
+		Oid		tagId;
+		char	*tagname;
+		char	*tagvalue;
+		Datum	datum;
+		bool	isnull;
+		List	*allowed_values;
+		ListCell	*value_cell;
+		
+		def = lfirst(cell);
+		tagname = def->defname;
+		tagvalue = defGetString(def);
+		
+		tuple = SearchSysCache1(TAGNAME, CStringGetDatum(tagname));
+		if (!HeapTupleIsValid(tuple))
+			elog(ERROR, "cache lookup failed for tag %s", tagname);
+
+		tagform = (Form_pg_tag) GETSTRUCT(tuple);
+		tagId = tagform->oid;
+		
+		/* Extract the current tag's allowed_values */
+		datum = SysCacheGetAttr(TAGNAME,
+								tuple,
+								Anum_pg_tag_allowed_values,
+								&isnull);
+
+		if (isnull)
+			ereport(ERROR,
+					(errcode(ERRCODE_UNDEFINED_OBJECT),
+					 errmsg("tag value \"%s\" does not exist in tag \"%s\"",
+							tagvalue, tagname)));
+
+		allowed_values = untransformTagValues(datum);
+
+		foreach(value_cell, allowed_values)
+		{
+			char	*allowed_value = strVal(lfirst(value_cell));
+
+			if (strcmp(tagvalue, allowed_value) == 0)
+			{
+				break;
+			}
+		}
+
+		if (value_cell)
+		{
+			desc_tuple = SearchSysCache4(TAGDESCRIPTION,
+										 ObjectIdGetDatum(dbid),
+										 ObjectIdGetDatum(classid),
+										 ObjectIdGetDatum(objid),
+										 ObjectIdGetDatum(tagId));
+			
+			if (!HeapTupleIsValid(desc_tuple))
+			{
+				Datum	tag_desc_values[Natts_pg_tag_description];
+				bool	tag_desc_nulls[Natts_pg_tag_description];
+				
+				/*
+				 * Insert tuple into pg_tag_description and record dependency.
+				 */
+				memset(tag_desc_values, 0, sizeof(tag_desc_values));
+				memset(tag_desc_nulls, false, sizeof(tag_desc_nulls));
+
+				tag_desc_oid = GetNewOidForTagDescription(tag_desc_rel, TagDescriptionOidIndexId,
+														  Anum_pg_tag_description_oid,
+														  objname,
+														  tagId);
+				tag_desc_values[Anum_pg_tag_description_oid - 1] = ObjectIdGetDatum(tag_desc_oid);
+				tag_desc_values[Anum_pg_tag_description_dbid - 1] = ObjectIdGetDatum(dbid);
+				tag_desc_values[Anum_pg_tag_description_classid - 1] = ObjectIdGetDatum(classid);
+				tag_desc_values[Anum_pg_tag_description_objid - 1] = ObjectIdGetDatum(objid);
+				tag_desc_values[Anum_pg_tag_description_objsubid - 1] = Int32GetDatum(objsubid);
+				tag_desc_values[Anum_pg_tag_description_tagid - 1] = ObjectIdGetDatum(tagId);
+
+				/* Prepare the values array */
+				datum = transformTagValues(TAG_VALUES_ACTION_ADD,
+										   PointerGetDatum(NULL),
+										   list_make1(makeString(tagvalue)));
+				if (PointerIsValid(DatumGetPointer(datum)))
+					tag_desc_values[Anum_pg_tag_description_tagvalues - 1] = datum;
+				else
+					tag_desc_nulls[Anum_pg_tag_description_tagvalues - 1] = true;
+
+				new_tuple = heap_form_tuple(tag_desc_rel->rd_att, tag_desc_values, tag_desc_nulls);
+
+				CatalogTupleInsert(tag_desc_rel, new_tuple);
+
+				heap_freetuple(new_tuple);
+
+				/* Record tag dependency */
+				recordTagDependency(TagDescriptionRelationId, tag_desc_oid, tagId);
+			}
+			else
+			{
+				Datum	tag_desc_repl_val[Natts_pg_tag_description];
+				bool	tag_desc_repl_null[Natts_pg_tag_description];
+				bool	tag_desc_repl_repl[Natts_pg_tag_description];
+				
+				/*
+				 * Update existing tuple in pg_tag_description
+				 */
+				memset(tag_desc_repl_val, 0, sizeof(tag_desc_repl_val));
+				memset(tag_desc_repl_null, false, sizeof(tag_desc_repl_null));
+				memset(tag_desc_repl_repl, false, sizeof(tag_desc_repl_repl));
+
+				/* Extract the current tagvalues */
+				datum = SysCacheGetAttr(TAGDESCRIPTION,
+										desc_tuple,
+										Anum_pg_tag_description_tagvalues,
+										&isnull);
+
+				if (isnull)
+					datum = PointerGetDatum(NULL);
+
+				/* Prepare the values array */
+				datum = transformTagValues(TAG_VALUES_ACTION_ADD,
+										   datum,
+										   list_make1(makeString(tagvalue)));
+
+				if (PointerIsValid(DatumGetPointer(datum)))
+					tag_desc_repl_val[Anum_pg_tag_description_tagvalues - 1] = datum;
+				else
+					tag_desc_repl_null[Anum_pg_tag_description_tagvalues - 1] = true;
+
+				tag_desc_repl_repl[Anum_pg_tag_description_tagvalues - 1] = true;
+
+				/* Everything looks good - update the tuple */
+				new_tuple = heap_modify_tuple(desc_tuple, RelationGetDescr(tag_desc_rel),
+										  	  tag_desc_repl_val, tag_desc_repl_null, tag_desc_repl_repl);
+
+				CatalogTupleUpdate(tag_desc_rel, &new_tuple->t_self, new_tuple);
+				
+				heap_freetuple(new_tuple);
+
+				ReleaseSysCache(desc_tuple);
+			}
+		}
+		else
+		{
+			ereport(ERROR,
+						(errcode(ERRCODE_UNDEFINED_OBJECT),
+						 errmsg("tag value \"%s\" is not in tag \"%s\" allowed values",
+								tagvalue, tagname)));
+		}
+
+		ReleaseSysCache(tuple);
+		
+		CommandCounterIncrement();
+	}
+	
+	table_close(tag_desc_rel, RowExclusiveLock);
+	table_close(tag_rel, NoLock);
+	
+	return;
+}
+
+/*
+ * Transform tag values to datum.
+ */
 static Datum
-transformTagAllowedValues(int action, Datum oldvalues,
-						  List *allowed_values)
+transformTagValues(int action, Datum oldvalues,
+				   List *allowed_values)
 {
 	List		*resultValues = untransformTagValues(oldvalues);
 	ListCell	*value_cell;
@@ -489,6 +677,9 @@ transformTagAllowedValues(int action, Datum oldvalues,
 	return result;
 }
 
+/*
+ * Untranform tag values from datum to list.
+ */
 static List *
 untransformTagValues(Datum allowed_values)
 {
@@ -521,6 +712,9 @@ untransformTagValues(Datum allowed_values)
 	return result;
 }
 
+/*
+ * Get array datum from allowed_values list.
+ */
 static Datum
 valueListToArray(List *allowed_values)
 {

@@ -94,6 +94,7 @@ typedef enum SharedDependencyType
 	SHARED_DEPENDENCY_TABLESPACE = 't',
 	SHARED_DEPENDENCY_PROFILE = 'f',
 	SHARED_DEPENDENCY_STORAGE_SERVER = 's',
+	SHARED_DEPENDENCY_TAG = 'g',
 	SHARED_DEPENDENCY_INVALID = 0
 } SharedDependencyType;
 
@@ -301,6 +302,8 @@ extern void recordProfileDependency(Oid roleId, Oid profileId);
 extern void changeProfileDependency(Oid roleId, Oid profileId);
 
 extern void recordStorageServerDependency(Oid classId, Oid objectId, Oid srvId);
+
+extern void recordTagDependency(Oid classId, Oid objectId, Oid tagId);
 
 /* Custom object class */
 struct StringInfoData;

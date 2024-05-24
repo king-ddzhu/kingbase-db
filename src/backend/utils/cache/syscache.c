@@ -983,21 +983,21 @@ static const struct cachedesc cacheinfo[] = {
 			Anum_pg_tag_description_dbid,
 			Anum_pg_tag_description_classid,
 			Anum_pg_tag_description_objid,
-			Anum_pg_tag_description_objsubid,
-		},
-		16
-	},
-	{TagDescriptionRelationId,	/* TAGDESCRIPTIONTAGID */
-		TagDescriptionTagidIndexId,
-		1,
-		{
 			Anum_pg_tag_description_tagid,
-			0,
-			0,
-			0,
 		},
 		16
 	},
+//	{TagDescriptionRelationId,	/* TAGDESCRIPTIONTAGID */
+//		TagDescriptionTagidIndexId,
+//		1,
+//		{
+//			Anum_pg_tag_description_tagid,
+//			0,
+//			0,
+//			0,
+//		},
+//		16
+//	},
 	{TransformRelationId,		/* TRFOID */
 		TransformOidIndexId,
 		1,

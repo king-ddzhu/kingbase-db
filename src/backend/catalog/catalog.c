@@ -508,7 +508,8 @@ IsSharedRelation(Oid relationId)
 		relationId == TagNameIndexId ||
 		relationId == TagOidIndexId ||
 		relationId == TagDescriptionIndexId ||
-		relationId == TagDescriptionTagidIndexId)
+		relationId == TagDescriptionTagidIndexId ||
+		relationId == TagDescriptionOidIndexId)
 	{
 		return true;
 	}

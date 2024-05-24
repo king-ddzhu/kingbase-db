@@ -54,6 +54,7 @@
 #include "commands/defrem.h"
 #include "commands/seclabel.h"
 #include "commands/tablespace.h"
+#include "commands/tag.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "pgstat.h"
@@ -581,6 +582,16 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 
 		if (Gp_role == GP_ROLE_DISPATCH)
 			RememberAssignedOidForDatabase(dbname, dboid);
+	}
+
+	if (stmt->tags)
+	{
+		AddTagsForObject(stmt->tags,
+						 dboid,
+						 InvalidOid,
+						 InvalidOid,
+						 InvalidAttrNumber,
+						 dbname);
 	}
 
 	/*
