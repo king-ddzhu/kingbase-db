@@ -4682,6 +4682,7 @@ _copyCreatedbStmt(const CreatedbStmt *from)
 
 	COPY_STRING_FIELD(dbname);
 	COPY_NODE_FIELD(options);
+	COPY_NODE_FIELD(tags);
 
 	return newnode;
 }

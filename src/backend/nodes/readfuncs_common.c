@@ -998,6 +998,7 @@ _readCreatedbStmt(void)
 
 	READ_STRING_FIELD(dbname);
 	READ_NODE_FIELD(options);
+	READ_NODE_FIELD(tags);
 
 	READ_DONE();
 }

@@ -377,7 +377,8 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 
 %type <list>	OptRoleList AlterOptRoleList
 %type <list>    OptProfileList
-%type <list>	OptTagValuesList
+%type <list>	OptTagValuesList OptTagOptList TagOptList
+%type <defelt>  TagOptElem
 %type <defelt>	CreateOptRoleElem AlterOptRoleElem
 %type <defelt>	AlterOnlyOptRoleElem
 %type <defelt>  OptProfileElem
@@ -2497,6 +2498,24 @@ OptTagValuesList:
 			OptTagValuesList ',' Sconst         { $$ = lappend($1, makeString($3)); }
 			| Sconst                            { $$ = list_make1(makeString($1)); }
 		;
+
+OptTagOptList:
+		TAG '(' TagOptList ')'                          { $$ = $3; }
+		| WITH TAG '(' TagOptList ')'                   { $$ = $4; }
+		| /*EMPTY*/                                     { $$ = NIL; }
+	;
+
+TagOptList:
+		TagOptElem                                      { $$ = list_make1($1); }
+		| TagOptList ',' TagOptElem                     { $$ = lappend($1, $3); }
+	;
+
+TagOptElem:
+		ColLabel '=' Sconst
+		{
+            $$ = makeDefElem($1, (Node *) makeString($3), @1);
+        }
+    ;
 
 
 /*****************************************************************************
@@ -13503,11 +13522,12 @@ LoadStmt:	LOAD file_name
  *****************************************************************************/
 
 CreatedbStmt:
-			CREATE DATABASE name opt_with createdb_opt_list
+			CREATE DATABASE name opt_with createdb_opt_list OptTagOptList
 				{
 					CreatedbStmt *n = makeNode(CreatedbStmt);
 					n->dbname = $3;
 					n->options = $5;
+					n->tags = $6;
 					$$ = (Node *)n;
 				}
 		;

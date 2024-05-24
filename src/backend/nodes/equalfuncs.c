@@ -1874,6 +1874,7 @@ _equalCreatedbStmt(const CreatedbStmt *a, const CreatedbStmt *b)
 {
 	COMPARE_STRING_FIELD(dbname);
 	COMPARE_NODE_FIELD(options);
+	COMPARE_NODE_FIELD(tags);
 	return true;
 }
 

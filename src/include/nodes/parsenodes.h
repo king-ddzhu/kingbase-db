@@ -3946,6 +3946,7 @@ typedef struct CreatedbStmt
 	NodeTag		type;
 	char	   *dbname;			/* name of database to create */
 	List	   *options;		/* List of DefElem nodes */
+	List	   *tags;			/* List of tags DefElem nodes */
 } CreatedbStmt;
 
 /* ----------------------

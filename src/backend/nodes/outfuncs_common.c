@@ -1000,6 +1000,7 @@ _outCreatedbStmt(StringInfo str, const CreatedbStmt *node)
 	WRITE_NODE_TYPE("CREATEDBSTMT");
 	WRITE_STRING_FIELD(dbname);
 	WRITE_NODE_FIELD(options);
+	WRITE_NODE_FIELD(tags);
 }
 
 static void
