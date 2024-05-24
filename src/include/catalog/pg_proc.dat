@@ -12390,7 +12390,7 @@
 { oid => 7099, descr => 'Legacy cdbhash function',
    proname => 'cdblegacyhash_name', prorettype => 'int4', proargtypes => 'name', prosrc => 'cdblegacyhash_name' },
 
-{ oid => 7183, descr => 'Legacy cdbhash function',
+{ oid => 6151, descr => 'Legacy cdbhash function',
    proname => 'cdblegacyhash_oid', prorettype => 'int4', proargtypes => 'oid', prosrc => 'cdblegacyhash_oid' },
 
 { oid => 7184, descr => 'Legacy cdbhash function',
