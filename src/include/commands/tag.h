@@ -15,8 +15,9 @@
 #define TAG_H
 #include "catalog/objectaddress.h"
 
-extern ObjectAddress CreateTag(CreateTagStmt *stmt);
-//extern ObjectAddress AlterTag(AlterTagStmt *stmt);
+extern Oid CreateTag(CreateTagStmt *stmt);
+extern ObjectAddress AlterTag(AlterTagStmt *stmt);
+extern void DropTag(DropTagStmt *stmt);
 extern Oid get_tag_oid(const char *tagname, bool missing_ok);
 extern ObjectAddress RenameTag(const char *oldname, const char *newname);
 

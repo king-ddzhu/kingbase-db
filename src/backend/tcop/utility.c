@@ -1019,10 +1019,11 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 			break;
 
 		case T_AlterTagStmt:
-//			AlterTag((AlterTagStmt *) parsetree);
+			AlterTag((AlterTagStmt *) parsetree);
 			break;
 
 		case T_DropTagStmt:
+			DropTag((DropTagStmt *) parsetree);
 			break;
 
 		case T_ExplainStmt:

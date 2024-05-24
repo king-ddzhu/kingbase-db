@@ -2457,6 +2457,7 @@ AlterTagStmt:
 			| ALTER TAG name UNSET_P ALLOWED_VALUES
 				{
 					AlterTagStmt *n = makeNode(AlterTagStmt);
+					n->tag_name = $3;
 					n->unset = true;
 					$$ = (Node *)n;
 				}
