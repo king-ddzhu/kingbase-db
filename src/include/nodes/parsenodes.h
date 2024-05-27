@@ -3958,6 +3958,8 @@ typedef struct AlterDatabaseStmt
 	NodeTag		type;
 	char	   *dbname;			/* name of database to alter */
 	List	   *options;		/* List of DefElem nodes */
+	List	   *tags;			/* List of tags DefElem nodes */
+	bool		unsettag;		/* Whether unset tag */
 } AlterDatabaseStmt;
 
 typedef struct AlterDatabaseSetStmt

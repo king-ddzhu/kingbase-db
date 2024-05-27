@@ -4694,6 +4694,8 @@ _copyAlterDatabaseStmt(const AlterDatabaseStmt *from)
 
 	COPY_STRING_FIELD(dbname);
 	COPY_NODE_FIELD(options);
+	COPY_NODE_FIELD(tags);
+	COPY_SCALAR_FIELD(unsettag);
 
 	return newnode;
 }

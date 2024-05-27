@@ -980,9 +980,9 @@ static const struct cachedesc cacheinfo[] = {
 		TagDescriptionIndexId,
 		4,
 		{
-			Anum_pg_tag_description_dbid,
 			Anum_pg_tag_description_classid,
 			Anum_pg_tag_description_objid,
+			Anum_pg_tag_description_objsubid,
 			Anum_pg_tag_description_tagid,
 		},
 		16

@@ -584,16 +584,6 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 			RememberAssignedOidForDatabase(dbname, dboid);
 	}
 
-	if (stmt->tags)
-	{
-		AddTagsForObject(stmt->tags,
-						 dboid,
-						 InvalidOid,
-						 InvalidOid,
-						 InvalidAttrNumber,
-						 dbname);
-	}
-
 	/*
 	 * Insert a new tuple into pg_database.  This establishes our ownership of
 	 * the new database name (anyone else trying to insert the same name will
@@ -631,6 +621,17 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 							new_record, new_record_nulls);
 
 	CatalogTupleInsert(pg_database_rel, tuple);
+	
+	CommandCounterIncrement();
+
+	if (stmt->tags)
+	{
+		AddTagsForObject(stmt->tags,
+						 DatabaseRelationId,
+						 dboid,
+						 InvalidAttrNumber,
+						 dbname);
+	}
 
 	if (shouldDispatch)
 	{
@@ -1819,6 +1820,24 @@ AlterDatabase(ParseState *pstate, AlterDatabaseStmt *stmt, bool isTopLevel)
 	newtuple = heap_modify_tuple(tuple, RelationGetDescr(rel), new_record,
 								 new_record_nulls, new_record_repl);
 	CatalogTupleUpdate(rel, &tuple->t_self, newtuple);
+	
+	if (stmt->tags || stmt->unsettag)
+	{
+		AlterTagsForObject(stmt->tags,
+						   DatabaseRelationId,
+						   dboid,
+						   InvalidAttrNumber,
+						   stmt->dbname);
+	}
+	
+	if (stmt->unsettag)
+	{
+		UnsetTagsForObject(stmt->tags,
+					 	   DatabaseRelationId,
+					 	   dboid,
+					 	   InvalidAttrNumber,
+					 	   stmt->dbname);
+	}
 
 	InvokeObjectPostAlterHook(DatabaseRelationId, dboid, 0);
 

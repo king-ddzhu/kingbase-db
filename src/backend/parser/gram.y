@@ -1194,6 +1194,7 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 			%nonassoc SYSTEM_P
 			%nonassoc STRICT_P
 			%nonassoc TABLESPACE
+			%nonassoc TAG
 			%nonassoc TASK
 			%nonassoc TEMP
 			%nonassoc TEMPLATE
@@ -2515,7 +2516,6 @@ TagOptElem:
             $$ = makeDefElem($1, (Node *) makeString($3), @1);
         }
     ;
-
 
 /*****************************************************************************
  *
@@ -13615,6 +13615,21 @@ AlterDatabaseStmt:
 														(Node *)makeString($6), @6));
 					$$ = (Node *)n;
 				 }
+			| ALTER DATABASE name SET TAG WITH TagOptList
+				{
+					AlterDatabaseStmt *n = makeNode(AlterDatabaseStmt);
+					n->dbname = $3;
+					n->tags = $7;
+					$$ = (Node *)n;
+				}
+			| ALTER DATABASE name UNSET_P TAG name_list
+				{
+					AlterDatabaseStmt *n = makeNode(AlterDatabaseStmt);
+					n->dbname = $3;
+					n->tags = $6;
+					n->unsettag = true;
+					$$ = (Node *)n;
+				}
 		;
 
 AlterDatabaseSetStmt:

@@ -1883,6 +1883,8 @@ _equalAlterDatabaseStmt(const AlterDatabaseStmt *a, const AlterDatabaseStmt *b)
 {
 	COMPARE_STRING_FIELD(dbname);
 	COMPARE_NODE_FIELD(options);
+	COMPARE_NODE_FIELD(tags);
+	COMPARE_SCALAR_FIELD(unsettag);
 
 	return true;
 }
