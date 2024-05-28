@@ -9749,6 +9749,14 @@ CommentStmt:
 					n->comment = $10;
 					$$ = (Node *) n;
 				}
+			| COMMENT ON TAG name IS comment_text
+				{
+					CommentStmt *n = makeNode(CommentStmt);
+					n->objtype = OBJECT_TAG;
+					n->object = (Node *) $4;
+					n->comment = $6;
+					$$ = (Node *) n;
+				}
 		;
 
 comment_text:
