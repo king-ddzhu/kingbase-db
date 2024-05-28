@@ -4277,7 +4277,7 @@ getObjectDescription(const ObjectAddress *object, bool missing_ok)
 
 				form_tag_desc = (Form_pg_tag_description) GETSTRUCT(tag_desc_tuple);
 				
-				tag_tuple = SearchSysCache1(TagRelationId, ObjectIdGetDatum(form_tag_desc->tagid));
+				tag_tuple = SearchSysCache1(TAGOID, ObjectIdGetDatum(form_tag_desc->tagid));
 				if (!HeapTupleIsValid(tag_tuple))
 					elog(ERROR, "cache lookup failed for tag %u", form_tag_desc->tagid);
 
@@ -6342,7 +6342,7 @@ getObjectIdentityParts(const ObjectAddress *object,
 
 				form_tag_desc = (Form_pg_tag_description) GETSTRUCT(tag_desc_tuple);
 
-				tag_tuple = SearchSysCache1(TagRelationId, ObjectIdGetDatum(form_tag_desc->tagid));
+				tag_tuple = SearchSysCache1(TAGOID, ObjectIdGetDatum(form_tag_desc->tagid));
 				if (!HeapTupleIsValid(tag_tuple))
 					elog(ERROR, "cache lookup failed for tag %u", form_tag_desc->tagid);
 
