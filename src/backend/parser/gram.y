@@ -2067,11 +2067,11 @@ AlterRoleStmt:
 					n->options = $5;
 					$$ = (Node *)n;
 				 }
-			| ALTER USER RoleSpec SET TAG '(' TagOptList ')'
+			| ALTER USER RoleSpec TAG '(' TagOptList ')'
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $3;
-					n-tags = $7;
+					n->tags = $6;
 					$$ = (Node *)n;
 				}
 			| ALTER USER RoleSpec UNSET_P TAG name_list
@@ -13639,11 +13639,11 @@ AlterDatabaseStmt:
 														(Node *)makeString($6), @6));
 					$$ = (Node *)n;
 				 }
-			| ALTER DATABASE name SET TAG '(' TagOptList ')'
+			| ALTER DATABASE name TAG '(' TagOptList ')'
 				{
 					AlterDatabaseStmt *n = makeNode(AlterDatabaseStmt);
 					n->dbname = $3;
-					n->tags = $7;
+					n->tags = $6;
 					$$ = (Node *)n;
 				}
 			| ALTER DATABASE name UNSET_P TAG name_list
