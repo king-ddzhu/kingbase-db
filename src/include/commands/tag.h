@@ -18,9 +18,10 @@
 extern Oid CreateTag(CreateTagStmt *stmt);
 extern ObjectAddress AlterTag(AlterTagStmt *stmt);
 extern void DropTag(DropTagStmt *stmt);
-extern void AddTagsForObject(List *tags, Oid classid, Oid objid, Oid objsubid, char *objname);
-extern void AlterTagsForObject(List *tags, Oid classid, Oid objid, Oid objsubid, char *objname);
-extern void UnsetTagsForObject(List *tags, Oid classid, Oid objid, Oid objsubid, char *objname);
+extern void AddTagDescriptions(List *tags, Oid classid, Oid objid, Oid objsubid, char *objname);
+extern void AlterTagDescriptions(List *tags, Oid classid, Oid objid, Oid objsubid, char *objname);
+extern void UnsetTagDescriptions(List *tags, Oid classid, Oid objid, Oid objsubid, char *objname);
+extern void DeleteTagDescriptions(Oid classid, Oid objid, Oid objsubid, char *objname);
 extern Oid get_tag_oid(const char *tagname, bool missing_ok);
 extern ObjectAddress RenameTag(const char *oldname, const char *newname);
 

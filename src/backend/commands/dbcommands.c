@@ -626,11 +626,11 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 
 	if (stmt->tags)
 	{
-		AddTagsForObject(stmt->tags,
-						 DatabaseRelationId,
-						 dboid,
-						 InvalidAttrNumber,
-						 dbname);
+		AddTagDescriptions(stmt->tags,
+					 	   DatabaseRelationId,
+					 	   dboid,
+					 	   InvalidAttrNumber,
+					 	   dbname);
 	}
 
 	if (shouldDispatch)
@@ -1079,6 +1079,11 @@ dropdb(const char *dbname, bool missing_ok, bool force)
 	 */
 	DeleteSharedComments(db_id, DatabaseRelationId);
 	DeleteSharedSecurityLabel(db_id, DatabaseRelationId);
+	
+	/*
+	 * Delete any tag description and associated dependencies.
+	 */
+	DeleteTagDescriptions();
 
 	/*
 	 * Remove settings associated with this database
@@ -1821,22 +1826,22 @@ AlterDatabase(ParseState *pstate, AlterDatabaseStmt *stmt, bool isTopLevel)
 								 new_record_nulls, new_record_repl);
 	CatalogTupleUpdate(rel, &tuple->t_self, newtuple);
 	
-	if (stmt->tags || stmt->unsettag)
+	if (stmt->tags)
 	{
-		AlterTagsForObject(stmt->tags,
-						   DatabaseRelationId,
-						   dboid,
-						   InvalidAttrNumber,
-						   stmt->dbname);
+		AlterTagDescriptions(stmt->tags,
+					   		 DatabaseRelationId,
+					   		 dboid,
+					   		 InvalidAttrNumber,
+					   		 stmt->dbname);
 	}
 	
 	if (stmt->unsettag)
 	{
-		UnsetTagsForObject(stmt->tags,
-					 	   DatabaseRelationId,
-					 	   dboid,
-					 	   InvalidAttrNumber,
-					 	   stmt->dbname);
+		UnsetTagDescriptions(stmt->tags,
+					   		 DatabaseRelationId,
+					   		 dboid,
+					   		 InvalidAttrNumber,
+					   		 stmt->dbname);
 	}
 
 	InvokeObjectPostAlterHook(DatabaseRelationId, dboid, 0);

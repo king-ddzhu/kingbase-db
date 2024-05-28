@@ -431,16 +431,16 @@ RenameTag(const char *oldname, const char *newname)
 }
 
 /*
- * Add tag
+ * Add tag for object
  *
  * Add tag for database object such as database, warehouse, table etc.
  */
 void
-AddTagsForObject(List *tags,
-				 Oid classid,
-				 Oid objid,
-				 Oid objsubid,
-				 char *objname)
+AddTagDescriptions(List *tags,
+				   Oid classid,
+				   Oid objid,
+				   Oid objsubid,
+				   char *objname)
 {
 	Relation	tag_rel;
 	Relation	tag_desc_rel;
@@ -616,16 +616,16 @@ AddTagsForObject(List *tags,
 }
 
 /*
- * Alter tag
+ * Alter tag for object
  *
  * Alter tag for database object such as database, warehouse, table etc.
  */
 void
-AlterTagsForObject(List *tags,
-				   Oid classid,
-				   Oid objid,
-				   Oid objsubid,
-				   char *objname)
+AlterTagDescriptions(List *tags,
+					 Oid classid,
+					 Oid objid,
+					 Oid objsubid,
+					 char *objname)
 {
 	Relation	tag_rel;
 	Relation	tag_desc_rel;
@@ -756,16 +756,16 @@ AlterTagsForObject(List *tags,
 
 
 /*
- * Unset tags
+ * Unset tags for object
  * 
  * Unset tag description value for object.
  */
 void
-UnsetTagsForObject(List *tags,
-				   Oid classid,
-				   Oid objid,
-				   Oid objsubid,
-				   char *objname)
+UnsetTagDescriptions(List *tags,
+					 Oid classid,
+					 Oid objid,
+					 Oid objsubid,
+					 char *objname)
 {
 	Relation	tag_rel;
 	Relation	tag_desc_rel;
@@ -835,6 +835,28 @@ UnsetTagsForObject(List *tags,
 
 	return;
 }
+
+/*
+ * Remove tag for object
+ * 
+ * Remove tag for database object such as database, warehouse, table etc.
+ */
+void
+DeleteTagDescriptions(Oid classid,
+					  Oid objid,
+					  Oid objsubid,
+					  char *objname)
+{
+	Oid		tagdescId;
+	HeapTuple	desc_tuple;
+	Scankey		skey[3];
+
+	/*
+	 * Delete shared dependency references related to this tag description object.
+	 */
+	deleteSharedDependencyRecordsFor(TagDescriptionRelationId, tagdescId, 0);
+}
+
 
 /*
  * Transform tag values to datum.
