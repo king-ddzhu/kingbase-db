@@ -4251,6 +4251,47 @@ getObjectDescription(const ObjectAddress *object, bool missing_ok)
 					appendStringInfo(&buffer, _("tag %s"), tagname);
 				break;
 			}
+		
+		case OCLASS_TAG_DESCRIPTION:
+			{
+				Oid		tagId;
+				Relation	tag_desc_rel;
+				ScanKeyData	skey;
+				SysScanDesc tag_desc_scan;
+				HeapTuple	tag_tuple;
+				HeapTuple	tag_desc_tuple;
+				Form_pg_tag	form_tag;
+				Form_pg_tag_description	form_tag_desc;
+				char		*tagname;
+				
+				ScanKeyInit(&skey, Anum_pg_tag_description_oid,
+							BTEqualStrategyNumber, F_OIDEQ,
+							ObjectIdGetDatum(object->objectId));
+
+				tag_desc_rel = table_open(TagDescriptionRelationId, AccessShareLock);
+				tag_desc_scan = systable_beginscan(tag_desc_rel, TagDescriptionOidIndexId, true,
+							  			  true, 1, &skey);
+
+				tag_desc_tuple = systable_getnext(tag_desc_scan);
+				if (!HeapTupleIsValid(tag_desc_tuple))
+					elog(ERROR, "lookup failed for tag description %u", object->objectId);
+
+				form_tag_desc = (Form_pg_tag_description) GETSTRUCT(tag_desc_tuple);
+				
+				tag_tuple = SearchSysCache1(TagRelationId, ObjectIdGetDatum(form_tag_desc->tagid));
+				if (!HeapTupleIsValid(tag_tuple))
+					elog(ERROR, "cache lookup failed for tag %u", form_tag_desc->tagid);
+
+				form_tag = (Form_pg_tag) GETSTRUCT(tag_tuple);
+				tagname = pstrdup(form_tag->tagname.data);
+				
+				appendStringInfo(&buffer, _("tag description with tag %s"), tagname);
+
+				ReleaseSysCache(tag_tuple);
+				systable_endscan(tag_desc_scan);
+				table_close(tag_desc_rel, AccessShareLock);
+				break;
+			}
 
 		default:
 			{
@@ -4849,6 +4890,10 @@ getObjectTypeDescription(const ObjectAddress *object, bool missing_ok)
 
 		case OCLASS_TAG:
 			appendStringInfoString(&buffer, "tag");
+			break;
+
+		case OCLASS_TAG_DESCRIPTION:
+			appendStringInfoString(&buffer, "tag description");
 			break;
 
 		default:
@@ -6270,6 +6315,48 @@ getObjectIdentityParts(const ObjectAddress *object,
 					*objname = list_make1(tagname);
 				appendStringInfoString(&buffer,
 									   quote_identifier(tagname));
+				break;
+			}
+
+		case OCLASS_TAG_DESCRIPTION:
+			{
+				Oid		tagId;
+				Relation	tag_desc_rel;
+				ScanKeyData	skey;
+				SysScanDesc tag_desc_scan;
+				HeapTuple	tag_tuple;
+				HeapTuple	tag_desc_tuple;
+				Form_pg_tag	form_tag;
+				Form_pg_tag_description	form_tag_desc;
+				char		*tagname;
+
+				ScanKeyInit(&skey, Anum_pg_tag_description_oid,
+							BTEqualStrategyNumber, F_OIDEQ,
+							ObjectIdGetDatum(object->objectId));
+
+				tag_desc_rel = table_open(TagDescriptionRelationId, AccessShareLock);
+				tag_desc_scan = systable_beginscan(tag_desc_rel, TagDescriptionOidIndexId, true,
+												   true, 1, &skey);
+
+				tag_desc_tuple = systable_getnext(tag_desc_scan);
+				if (!HeapTupleIsValid(tag_desc_tuple))
+					elog(ERROR, "lookup failed for tag description %u", object->objectId);
+
+				form_tag_desc = (Form_pg_tag_description) GETSTRUCT(tag_desc_tuple);
+
+				tag_tuple = SearchSysCache1(TagRelationId, ObjectIdGetDatum(form_tag_desc->tagid));
+				if (!HeapTupleIsValid(tag_tuple))
+					elog(ERROR, "cache lookup failed for tag %u", form_tag_desc->tagid);
+
+				form_tag = (Form_pg_tag) GETSTRUCT(tag_tuple);
+				tagname = pstrdup(form_tag->tagname.data);
+
+				appendStringInfo(&buffer, _("tag description with tag %s"),
+					 						quote_identifier(tagname));
+
+				ReleaseSysCache(tag_tuple);
+				systable_endscan(tag_desc_scan);
+				table_close(tag_desc_rel, AccessShareLock);
 				break;
 			}
 

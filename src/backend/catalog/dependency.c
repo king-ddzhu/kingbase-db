@@ -1592,7 +1592,7 @@ doDeletion(const ObjectAddress *object, int flags)
 		case OCLASS_STORAGE_SERVER:
 		case OCLASS_STORAGE_USER_MAPPING:
 		case OCLASS_TAG:
-//		case OCLASS_TAG_DESCRIPTION:
+		case OCLASS_TAG_DESCRIPTION:
 			elog(ERROR, "global objects cannot be deleted by doDeletion");
 			break;
 
@@ -2996,8 +2996,8 @@ getObjectClass(const ObjectAddress *object)
 		case TagRelationId:
 			return OCLASS_TAG;
 
-//		case TagDescriptionRelationId:
-//			return OCLASS_TAG_DESCRIPTION;
+		case TagDescriptionRelationId:
+			return OCLASS_TAG_DESCRIPTION;
 
 		default:
 		{

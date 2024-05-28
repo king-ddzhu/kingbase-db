@@ -1033,6 +1033,7 @@ EventTriggerSupportsObjectClass(ObjectClass objclass)
 		case OCLASS_STORAGE_SERVER:
 		case OCLASS_STORAGE_USER_MAPPING:
 		case OCLASS_TAG:
+		case OCLASS_TAG_DESCRIPTION:
 			/* no support for global objects */
 			return false;
 		case OCLASS_EVENT_TRIGGER:
