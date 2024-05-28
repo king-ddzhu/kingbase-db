@@ -853,6 +853,7 @@ DeleteTagDescriptions(Oid classid,
 	Relation	rel;
 	ScanKeyData	skey[3];
 	SysScanDesc	scan;
+	Form_pg_tag tagform;
 	
 	ScanKeyInit(&skey[0],
 				Anum_pg_tag_description_classid,
@@ -874,6 +875,9 @@ DeleteTagDescriptions(Oid classid,
 	
 	while ((desc_tuple = systable_getnext(scan)) != NULL)
 	{
+		tagform = (Form_pg_tag) GETSTRUCT(desc_tuple);
+		tagdescId = tagform->oid;
+		
 		CatalogTupleDelete(rel, &desc_tuple->t_self);
 
 		/*
