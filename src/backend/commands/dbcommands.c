@@ -1083,7 +1083,10 @@ dropdb(const char *dbname, bool missing_ok, bool force)
 	/*
 	 * Delete any tag description and associated dependencies.
 	 */
-	DeleteTagDescriptions();
+	DeleteTagDescriptions(DatabaseRelationId,
+						  db_id,
+						  InvalidAttrNumber,
+						  dbname);
 
 	/*
 	 * Remove settings associated with this database

@@ -17,6 +17,7 @@
  */
 #include "postgres.h"
 
+#include "access/genam.h"
 #include "access/relscan.h"
 #include "access/skey.h"
 #include "access/table.h"
@@ -439,7 +440,7 @@ void
 AddTagDescriptions(List *tags,
 				   Oid classid,
 				   Oid objid,
-				   Oid objsubid,
+				   int32 objsubid,
 				   char *objname)
 {
 	Relation	tag_rel;
@@ -505,7 +506,7 @@ AddTagDescriptions(List *tags,
 			desc_tuple = SearchSysCache4(TAGDESCRIPTION,
 										 ObjectIdGetDatum(classid),
 										 ObjectIdGetDatum(objid),
-										 Int16GetDatum(objsubid),
+										 Int32GetDatum(objsubid),
 										 ObjectIdGetDatum(tagId));
 			
 			if (!HeapTupleIsValid(desc_tuple))
@@ -624,7 +625,7 @@ void
 AlterTagDescriptions(List *tags,
 					 Oid classid,
 					 Oid objid,
-					 Oid objsubid,
+					 int32 objsubid,
 					 char *objname)
 {
 	Relation	tag_rel;
@@ -697,7 +698,7 @@ AlterTagDescriptions(List *tags,
 		desc_tuple = SearchSysCache4(TAGDESCRIPTION,
 									 ObjectIdGetDatum(classid),
 									 ObjectIdGetDatum(objid),
-									 Int16GetDatum(objsubid),
+									 Int32GetDatum(objsubid),
 									 ObjectIdGetDatum(tagId));
 		
 		if (!HeapTupleIsValid(desc_tuple))
@@ -764,7 +765,7 @@ void
 UnsetTagDescriptions(List *tags,
 					 Oid classid,
 					 Oid objid,
-					 Oid objsubid,
+					 int32 objsubid,
 					 char *objname)
 {
 	Relation	tag_rel;
@@ -798,7 +799,7 @@ UnsetTagDescriptions(List *tags,
 		desc_tuple = SearchSysCache4(TAGDESCRIPTION,
 									 ObjectIdGetDatum(classid),
 									 ObjectIdGetDatum(objid),
-									 Int16GetDatum(objsubid),
+									 Int32GetDatum(objsubid),
 									 ObjectIdGetDatum(tagId));
 
 		if (!HeapTupleIsValid(desc_tuple))
@@ -844,17 +845,47 @@ UnsetTagDescriptions(List *tags,
 void
 DeleteTagDescriptions(Oid classid,
 					  Oid objid,
-					  Oid objsubid,
+					  int32 objsubid,
 					  char *objname)
 {
 	Oid		tagdescId;
 	HeapTuple	desc_tuple;
-	Scankey		skey[3];
+	Relation	rel;
+	ScanKeyData	skey[3];
+	SysScanDesc	scan;
+	
+	ScanKeyInit(&skey[0],
+				Anum_pg_tag_description_classid,
+				BTEqualStrategyNumber, F_OIDEQ,
+				ObjectIdGetDatum(classid));
+	ScanKeyInit(&skey[1],
+			 	Anum_pg_tag_description_objid,
+			 	BTEqualStrategyNumber, F_OIDEQ,
+			 	ObjectIdGetDatum(objid));
+	ScanKeyInit(&skey[2],
+			 	Anum_pg_tag_description_objsubid,
+			 	BTEqualStrategyNumber, F_INT4EQ,
+			 	Int32GetDatum(objsubid));
 
-	/*
-	 * Delete shared dependency references related to this tag description object.
-	 */
-	deleteSharedDependencyRecordsFor(TagDescriptionRelationId, tagdescId, 0);
+	rel = table_open(TagDescriptionRelationId, RowExclusiveLock);
+
+	scan = systable_beginscan(rel, TagDescriptionIndexId, true,
+							  NULL, 3, skey);
+	
+	while ((desc_tuple = systable_getnext(scan)) != NULL)
+	{
+		CatalogTupleDelete(rel, &desc_tuple->t_self);
+
+		/*
+		 * Delete shared dependency references related to this tag description object.
+		 */
+		deleteSharedDependencyRecordsFor(TagDescriptionRelationId, tagdescId, 0);
+	}
+
+	systable_endscan(scan);
+
+	/* Hold lock until transaction commit */
+	table_close(rel, NoLock);
 }
 
 
