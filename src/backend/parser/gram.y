@@ -2032,13 +2032,13 @@ keyvalue_pair:
  *****************************************************************************/
 
 CreateUserStmt:
-			CREATE USER RoleId opt_with OptRoleList OptTagOptList
+			CREATE USER RoleId opt_with OptRoleList WITH OptTagOptList
 				{
 					CreateRoleStmt *n = makeNode(CreateRoleStmt);
 					n->stmt_type = ROLESTMT_USER;
 					n->role = $3;
 					n->options = $5;
-					n->tags = $6;
+					n->tags = $7;
 					$$ = (Node *)n;
 				}
 		;
@@ -13545,12 +13545,12 @@ LoadStmt:	LOAD file_name
  *****************************************************************************/
 
 CreatedbStmt:
-			CREATE DATABASE name opt_with createdb_opt_list OptTagOptList
+			CREATE DATABASE name opt_with createdb_opt_list WITH OptTagOptList
 				{
 					CreatedbStmt *n = makeNode(CreatedbStmt);
 					n->dbname = $3;
 					n->options = $5;
-					n->tags = $6;
+					n->tags = $7;
 					$$ = (Node *)n;
 				}
 		;
