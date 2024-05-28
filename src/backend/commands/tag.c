@@ -846,7 +846,7 @@ void
 DeleteTagDescriptions(Oid classid,
 					  Oid objid,
 					  int32 objsubid,
-					  char *objname)
+					  const char *objname)
 {
 	Oid		tagdescId;
 	HeapTuple	desc_tuple;
