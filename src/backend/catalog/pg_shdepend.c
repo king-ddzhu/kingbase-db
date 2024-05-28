@@ -1309,6 +1309,8 @@ storeObjectDescription(StringInfo descs,
 				appendStringInfo(descs, _("profile of %s"), objdesc);
 			else if (deptype == SHARED_DEPENDENCY_STORAGE_SERVER)
 				appendStringInfo(descs, _("storage server of %s"), objdesc);
+			else if (deptype == SHARED_DEPENDENCY_TAG)
+				appendStringInfo(descs, _("tag of %s"), objdesc);
 			else
 				elog(ERROR, "unrecognized dependency type: %d",
 					 (int) deptype);
