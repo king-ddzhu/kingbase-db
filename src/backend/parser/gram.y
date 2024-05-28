@@ -2032,12 +2032,13 @@ keyvalue_pair:
  *****************************************************************************/
 
 CreateUserStmt:
-			CREATE USER RoleId opt_with OptRoleList
+			CREATE USER RoleId opt_with OptRoleList OptTagOptList
 				{
 					CreateRoleStmt *n = makeNode(CreateRoleStmt);
 					n->stmt_type = ROLESTMT_USER;
 					n->role = $3;
 					n->options = $5;
+					n->tags = $6;
 					$$ = (Node *)n;
 				}
 		;
@@ -2066,6 +2067,21 @@ AlterRoleStmt:
 					n->options = $5;
 					$$ = (Node *)n;
 				 }
+			| ALTER USER RoleSpec SET TAG WITH TagOptList
+				{
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $3;
+					n-tags = $7;
+					$$ = (Node *)n;
+				}
+			| ALTER USER RoleSpec UNSET_P TAG name_list
+				{
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $3;
+					n->tags = $6;
+					n->unsettag = true;
+					$$ = (Node *)n;
+				}
 		;
 
 opt_in_database:

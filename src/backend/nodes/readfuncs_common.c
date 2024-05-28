@@ -385,6 +385,8 @@ _readAlterRoleStmt(void)
 	READ_NODE_FIELD(role);
 	READ_NODE_FIELD(options);
 	READ_INT_FIELD(action);
+	READ_NODE_FIELD(tags);
+	WRITE_BOOL_FIELD(unsettag);
 
 	READ_DONE();
 }
@@ -877,6 +879,7 @@ _readCreateRoleStmt(void)
 	READ_ENUM_FIELD(stmt_type, RoleStmtType);
 	READ_STRING_FIELD(role);
 	READ_NODE_FIELD(options);
+	READ_NODE_FIELD(tags);
 
 	READ_DONE();
 }

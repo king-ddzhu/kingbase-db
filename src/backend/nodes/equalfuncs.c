@@ -2349,6 +2349,7 @@ _equalCreateRoleStmt(const CreateRoleStmt *a, const CreateRoleStmt *b)
 	COMPARE_SCALAR_FIELD(stmt_type);
 	COMPARE_STRING_FIELD(role);
 	COMPARE_NODE_FIELD(options);
+	COMPARE_NODE_FIELD(tags);
 
 	return true;
 }
@@ -2386,6 +2387,8 @@ _equalAlterRoleStmt(const AlterRoleStmt *a, const AlterRoleStmt *b)
 	COMPARE_NODE_FIELD(role);
 	COMPARE_NODE_FIELD(options);
 	COMPARE_SCALAR_FIELD(action);
+	COMPARE_NODE_FIELD(tags);
+	COMPARE_SCALAR_FIELD(unsettag);
 
 	return true;
 }

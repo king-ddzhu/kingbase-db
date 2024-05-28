@@ -3203,6 +3203,7 @@ typedef struct CreateRoleStmt
 	RoleStmtType stmt_type;		/* ROLE/USER/GROUP */
 	char	   *role;			/* role name */
 	List	   *options;		/* List of DefElem nodes */
+	List	   *tags;			/* List of DefElem tag nodes */
 } CreateRoleStmt;
 
 typedef struct AlterRoleStmt
@@ -3211,6 +3212,8 @@ typedef struct AlterRoleStmt
 	RoleSpec   *role;			/* role */
 	List	   *options;		/* List of DefElem nodes */
 	int			action;			/* +1 = add members, -1 = drop members */
+	List	   *tags;			/* List of DefElem tag nodes */
+	bool		unsettag;
 } AlterRoleStmt;
 
 typedef struct AlterRoleSetStmt

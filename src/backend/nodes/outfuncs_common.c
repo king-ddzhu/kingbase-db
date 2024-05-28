@@ -840,6 +840,7 @@ _outCreateRoleStmt(StringInfo str, const CreateRoleStmt *node)
 	WRITE_ENUM_FIELD(stmt_type, RoleStmtType);
 	WRITE_STRING_FIELD(role);
 	WRITE_NODE_FIELD(options);
+	WRITE_NODE_FIELD(tags);
 }
 
 static void
@@ -927,6 +928,8 @@ _outAlterRoleStmt(StringInfo str, const AlterRoleStmt *node)
 	WRITE_NODE_FIELD(role);
 	WRITE_NODE_FIELD(options);
 	WRITE_INT_FIELD(action);
+	WRITE_NODE_FIELD(tags);
+	WRITE_BOOL_FIELD(unsettag);
 }
 
 static	void
