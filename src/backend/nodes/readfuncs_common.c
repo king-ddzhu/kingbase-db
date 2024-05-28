@@ -386,7 +386,7 @@ _readAlterRoleStmt(void)
 	READ_NODE_FIELD(options);
 	READ_INT_FIELD(action);
 	READ_NODE_FIELD(tags);
-	WRITE_BOOL_FIELD(unsettag);
+	READ_BOOL_FIELD(unsettag);
 
 	READ_DONE();
 }

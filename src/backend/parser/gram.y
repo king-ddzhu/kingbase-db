@@ -2032,7 +2032,7 @@ keyvalue_pair:
  *****************************************************************************/
 
 CreateUserStmt:
-			CREATE USER RoleId opt_with OptRoleList WITH OptTagOptList
+			CREATE USER RoleId opt_with OptRoleList OptTagOptList
 				{
 					CreateRoleStmt *n = makeNode(CreateRoleStmt);
 					n->stmt_type = ROLESTMT_USER;
@@ -2067,7 +2067,7 @@ AlterRoleStmt:
 					n->options = $5;
 					$$ = (Node *)n;
 				 }
-			| ALTER USER RoleSpec SET TAG WITH TagOptList
+			| ALTER USER RoleSpec SET TAG '(' TagOptList ')'
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
 					n->role = $3;
@@ -13545,7 +13545,7 @@ LoadStmt:	LOAD file_name
  *****************************************************************************/
 
 CreatedbStmt:
-			CREATE DATABASE name opt_with createdb_opt_list WITH OptTagOptList
+			CREATE DATABASE name opt_with createdb_opt_list OptTagOptList
 				{
 					CreatedbStmt *n = makeNode(CreatedbStmt);
 					n->dbname = $3;
@@ -13639,7 +13639,7 @@ AlterDatabaseStmt:
 														(Node *)makeString($6), @6));
 					$$ = (Node *)n;
 				 }
-			| ALTER DATABASE name SET TAG WITH TagOptList
+			| ALTER DATABASE name SET TAG '(' TagOptList ')'
 				{
 					AlterDatabaseStmt *n = makeNode(AlterDatabaseStmt);
 					n->dbname = $3;
