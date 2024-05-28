@@ -285,7 +285,7 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 		AlterObjectDependsStmt AlterObjectSchemaStmt AlterOwnerStmt
 		AlterOperatorStmt AlterTypeStmt AlterSeqStmt AlterStorageServerStmt AlterSystemStmt AlterTableStmt
 		AlterTblSpcStmt AlterExtensionStmt AlterExtensionContentsStmt
-		AlterCompositeTypeStmt AlterUseMappingStmt AlterStorageUserMappingStmt
+		AlterCompositeTypeStmt AlterUserMappingStmt AlterStorageUserMappingStmt
 		AlterRoleStmt AlterRoleSetStmt AlterPolicyStmt AlterStatsStmt
 		AlterDefaultPrivilegesStmt DefACLAction
 		AnalyzeStmt CallStmt ClosePortalStmt ClusterStmt CommentStmt
