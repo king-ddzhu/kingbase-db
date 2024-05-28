@@ -9753,7 +9753,7 @@ CommentStmt:
 				{
 					CommentStmt *n = makeNode(CommentStmt);
 					n->objtype = OBJECT_TAG;
-					n->object = (Node *) $4;
+					n->object = (Node *) makeString($4);
 					n->comment = $6;
 					$$ = (Node *) n;
 				}
