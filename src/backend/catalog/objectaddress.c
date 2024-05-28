@@ -4254,7 +4254,6 @@ getObjectDescription(const ObjectAddress *object, bool missing_ok)
 		
 		case OCLASS_TAG_DESCRIPTION:
 			{
-				Oid		tagId;
 				Relation	tag_desc_rel;
 				ScanKeyData	skey;
 				SysScanDesc tag_desc_scan;
@@ -4270,7 +4269,7 @@ getObjectDescription(const ObjectAddress *object, bool missing_ok)
 
 				tag_desc_rel = table_open(TagDescriptionRelationId, AccessShareLock);
 				tag_desc_scan = systable_beginscan(tag_desc_rel, TagDescriptionOidIndexId, true,
-							  			  true, 1, &skey);
+							  			  NULL, 1, &skey);
 
 				tag_desc_tuple = systable_getnext(tag_desc_scan);
 				if (!HeapTupleIsValid(tag_desc_tuple))
@@ -6320,7 +6319,6 @@ getObjectIdentityParts(const ObjectAddress *object,
 
 		case OCLASS_TAG_DESCRIPTION:
 			{
-				Oid		tagId;
 				Relation	tag_desc_rel;
 				ScanKeyData	skey;
 				SysScanDesc tag_desc_scan;
@@ -6336,7 +6334,7 @@ getObjectIdentityParts(const ObjectAddress *object,
 
 				tag_desc_rel = table_open(TagDescriptionRelationId, AccessShareLock);
 				tag_desc_scan = systable_beginscan(tag_desc_rel, TagDescriptionOidIndexId, true,
-												   true, 1, &skey);
+												   NULL, 1, &skey);
 
 				tag_desc_tuple = systable_getnext(tag_desc_scan);
 				if (!HeapTupleIsValid(tag_desc_tuple))
