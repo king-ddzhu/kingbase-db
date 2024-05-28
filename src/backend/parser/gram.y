@@ -285,7 +285,7 @@ static void check_expressions_in_partition_key(PartitionSpec *spec, core_yyscan_
 		AlterObjectDependsStmt AlterObjectSchemaStmt AlterOwnerStmt
 		AlterOperatorStmt AlterTypeStmt AlterSeqStmt AlterStorageServerStmt AlterSystemStmt AlterTableStmt
 		AlterTblSpcStmt AlterExtensionStmt AlterExtensionContentsStmt
-		AlterCompositeTypeStmt AlterUserMappingStmt AlterStorageUserMappingStmt
+		AlterCompositeTypeStmt AlterUseMappingStmt AlterStorageUserMappingStmt
 		AlterRoleStmt AlterRoleSetStmt AlterPolicyStmt AlterStatsStmt
 		AlterDefaultPrivilegesStmt DefACLAction
 		AnalyzeStmt CallStmt ClosePortalStmt ClusterStmt CommentStmt
@@ -2038,7 +2038,7 @@ CreateUserStmt:
 					n->stmt_type = ROLESTMT_USER;
 					n->role = $3;
 					n->options = $5;
-					n->tags = $7;
+					n->tags = $6;
 					$$ = (Node *)n;
 				}
 		;
@@ -13550,7 +13550,7 @@ CreatedbStmt:
 					CreatedbStmt *n = makeNode(CreatedbStmt);
 					n->dbname = $3;
 					n->options = $5;
-					n->tags = $7;
+					n->tags = $6;
 					$$ = (Node *)n;
 				}
 		;
