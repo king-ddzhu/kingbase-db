@@ -24,5 +24,6 @@ extern void UnsetTagDescriptions(List *tags, Oid classid, Oid objid, int32 objsu
 extern void DeleteTagDescriptions(Oid classid, Oid objid, int32 objsubid, const char *objname);
 extern Oid get_tag_oid(const char *tagname, bool missing_ok);
 extern ObjectAddress RenameTag(const char *oldname, const char *newname);
+extern char *TagGetNameByOid(Oid tagid, bool missing_ok);
 
 #endif							/* TAG_H */

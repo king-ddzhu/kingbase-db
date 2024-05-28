@@ -4243,6 +4243,15 @@ getObjectDescription(const ObjectAddress *object, bool missing_ok)
 				break;
 			}
 
+		case OCLASS_TAG:
+			{
+				char	*tagname = TagGetNameByOid(object->objectId, missing_ok);
+
+				if (tagname)
+					appendStringInfo(&buffer, _("tag %s"), tagname);
+				break;
+			}
+
 		default:
 			{
 				struct CustomObjectClass *coc;
@@ -4836,6 +4845,10 @@ getObjectTypeDescription(const ObjectAddress *object, bool missing_ok)
 
 		case OCLASS_STORAGE_USER_MAPPING:
 			appendStringInfoString(&buffer, "storage user mapping");
+			break;
+
+		case OCLASS_TAG:
+			appendStringInfoString(&buffer, "tag");
 			break;
 
 		default:
@@ -6243,6 +6256,20 @@ getObjectIdentityParts(const ObjectAddress *object,
 				appendStringInfo(&buffer,
 					       	"history password for role %s: ", quote_identifier(username));
 
+				break;
+			}
+
+		case OCLASS_TAG:
+			{
+				char *tagname;
+				
+				tagname = TagGetNameByOid(object->objectId, missing_ok);
+				if (!tagname)
+					break;
+				if (objname)
+					*objname = list_make1(tagname);
+				appendStringInfoString(&buffer,
+									   quote_identifier(tagname));
 				break;
 			}
 

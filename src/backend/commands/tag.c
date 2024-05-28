@@ -1022,3 +1022,29 @@ valueListToArray(List *allowed_values)
 	
 	return PointerGetDatum(NULL);
 }
+
+char *
+TagGetNameByOid(Oid tagid, bool missing_ok)
+{
+	char		*tagname;
+	HeapTuple	tuple;
+	Form_pg_tag tagform;
+	
+	tuple = SearchSysCache1(TAGOID, ObjectIdGetDatum(tagid));
+	if (!HeapTupleIsValid(tuple))
+	{
+		if (!missing_ok)
+			elog(ERROR, "tag %u could not be found", tagid);
+		
+		tagname = NULL;
+	}
+	else
+	{
+		tagform = (Form_pg_tag) GETSTRUCT(tuple);
+		
+		tagname = pstrdup(tagform->tagname.data);
+	}
+	ReleaseSysCache(tuple);
+	
+	return tagname;
+}
