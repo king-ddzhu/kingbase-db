@@ -1947,6 +1947,8 @@ typedef enum ObjectType
 	OBJECT_TABLE,
 	OBJECT_EXTPROTOCOL,
 	OBJECT_TABLESPACE,
+	OBJECT_TAG,
+//	OBJECT_TAG_DESCRIPTION,
 	OBJECT_TRANSFORM,
 	OBJECT_TRIGGER,
 	OBJECT_TSCONFIGURATION,
@@ -1995,6 +1997,20 @@ typedef struct CreateSchemaStmt
 	bool		pop_search_path;	/* true for pop search path only (internal only) */
 } CreateSchemaStmt;
 
+/* ----------------------
+ *		Create Tag Statement
+ *
+ * NOTE: the allowed_values list contains all the allowed values for this tag.
+ * ----------------------
+ */
+typedef struct CreateTagStmt
+{
+	NodeTag 	type;
+	char 	   *tag_name;	/* the name of the tag to create */
+	bool		missing_ok;	/* skip error if table missing */
+	List 	   *allowed_values;	/* allowed values list for this tag */
+} CreateTagStmt;
+
 typedef enum DropBehavior
 {
 	DROP_RESTRICT,				/* drop fails if any dependent objects */
@@ -2031,6 +2047,16 @@ typedef struct AlterTableStmt
 	List	   *wqueue;
 	bool	   is_internal;     /* GPDB: set for internal generated alter table stmt */
 } AlterTableStmt;
+
+typedef struct AlterTagStmt
+{
+	NodeTag		type;
+	char 	   *tag_name;
+	int			action;
+	List	   *tag_values;
+	bool		missing_ok;
+	bool		unset;
+} AlterTagStmt;
 
 typedef enum AlterTableType
 {
@@ -2474,6 +2500,7 @@ typedef struct CreateStmt
 	/* names chosen for partition indexes */
 	List	   *part_idx_oids;
 	List	   *part_idx_names;
+	List	   *tags;			/* List of tags DefElem nodes */
 } CreateStmt;
 
 /* ----------------------
@@ -2510,7 +2537,7 @@ typedef struct CreateExternalStmt
 	List	   *encoding;		/* List (size 1 max) of DefElem nodes for
 								   data encoding */
 	DistributedBy *distributedBy;   /* what columns we distribute the data by */
-
+	List	   *tags;			/* List of tags DefElem nodes */
 } CreateExternalStmt;
 
 /* ----------------------
@@ -2744,6 +2771,13 @@ typedef struct AlterTableMoveAllStmt
 	char	   *new_tablespacename;
 	bool		nowait;
 } AlterTableMoveAllStmt;
+
+typedef struct DropTagStmt
+{
+	NodeTag		type;
+	List	   *tags;
+	bool		missing_ok;
+} DropTagStmt;
 
 /* ----------------------
  *		Create/Alter/Drop Task Statements
@@ -3170,6 +3204,7 @@ typedef struct CreateRoleStmt
 	RoleStmtType stmt_type;		/* ROLE/USER/GROUP */
 	char	   *role;			/* role name */
 	List	   *options;		/* List of DefElem nodes */
+	List	   *tags;			/* List of DefElem tag nodes */
 } CreateRoleStmt;
 
 typedef struct AlterRoleStmt
@@ -3178,6 +3213,8 @@ typedef struct AlterRoleStmt
 	RoleSpec   *role;			/* role */
 	List	   *options;		/* List of DefElem nodes */
 	int			action;			/* +1 = add members, -1 = drop members */
+	List	   *tags;			/* List of DefElem tag nodes */
+	bool		unsettag;
 } AlterRoleStmt;
 
 typedef struct AlterRoleSetStmt
@@ -3913,6 +3950,7 @@ typedef struct CreatedbStmt
 	NodeTag		type;
 	char	   *dbname;			/* name of database to create */
 	List	   *options;		/* List of DefElem nodes */
+	List	   *tags;			/* List of tags DefElem nodes */
 } CreatedbStmt;
 
 /* ----------------------
@@ -3924,6 +3962,8 @@ typedef struct AlterDatabaseStmt
 	NodeTag		type;
 	char	   *dbname;			/* name of database to alter */
 	List	   *options;		/* List of DefElem nodes */
+	List	   *tags;			/* List of tags DefElem nodes */
+	bool		unsettag;		/* Whether unset tag */
 } AlterDatabaseStmt;
 
 typedef struct AlterDatabaseSetStmt
@@ -4364,6 +4404,7 @@ typedef struct CreateWarehouseStmt
 	NodeTag		type;
 	char		*whname;
 	List		*options;		/* List of DefElem nodes */
+	List		*tags;			/* List of tag DefElem nodes */
 } CreateWarehouseStmt;
 
 typedef struct DropWarehouseStmt

@@ -59,6 +59,7 @@
 #include "commands/subscriptioncmds.h"
 #include "commands/tablecmds.h"
 #include "commands/tablespace.h"
+#include "commands/tag.h"
 #include "commands/taskcmds.h"
 #include "commands/trigger.h"
 #include "commands/typecmds.h"
@@ -244,16 +245,19 @@ ClassifyUtilityCommandAsReadOnly(Node *parsetree)
 		case T_AlterProfileStmt:
 		case T_AlterQueueStmt:
 		case T_AlterResourceGroupStmt:
+		case T_AlterTagStmt:
 		case T_CreateDirectoryTableStmt:
 		case T_CreateProfileStmt:
 		case T_CreateQueueStmt:
 		case T_CreateResourceGroupStmt:
 		case T_CreateTaskStmt:
+		case T_CreateTagStmt:
 		case T_AlterTaskStmt:
 		case T_DropTaskStmt:
 		case T_DropProfileStmt:
 		case T_DropQueueStmt:
 		case T_DropResourceGroupStmt:
+		case T_DropTagStmt:
 		case T_DropWarehouseStmt:
 		case T_CreateExternalStmt:
 		case T_RetrieveStmt:
@@ -1010,10 +1014,23 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 			}
 			break;
 
+		case T_CreateTagStmt:
+			CreateTag((CreateTagStmt *) parsetree);
+			break;
+
+		case T_AlterTagStmt:
+			AlterTag((AlterTagStmt *) parsetree);
+			break;
+
+		case T_DropTagStmt:
+			DropTag((DropTagStmt *) parsetree);
+			break;
+
 		case T_ExplainStmt:
 			ExplainQuery(pstate, (ExplainStmt *) parsetree, params, dest);
 			break;
 
+			
 		case T_AlterSystemStmt:
 			PreventInTransactionBlock(isTopLevel, "ALTER SYSTEM");
 			AlterSystemSetConfigFile((AlterSystemStmt *) parsetree);
@@ -2859,6 +2876,9 @@ AlterObjectTypeCommandTag(ObjectType objtype)
 		case OBJECT_TABLESPACE:
 			tag = CMDTAG_ALTER_TABLESPACE;
 			break;
+		case OBJECT_TAG:
+			tag = CMDTAG_ALTER_TAG;
+			break;
 		case OBJECT_TRIGGER:
 			tag = CMDTAG_ALTER_TRIGGER;
 			break;
@@ -3057,6 +3077,18 @@ CreateCommandTag(Node *parsetree)
 			tag = CMDTAG_ALTER_TABLESPACE;
 			break;
 
+		case T_CreateTagStmt:
+			tag = CMDTAG_CREATE_TAG;
+			break;
+
+		case T_AlterTagStmt:
+			tag = CMDTAG_ALTER_TAG;
+			break;
+
+		case T_DropTagStmt:
+			tag = CMDTAG_DROP_TAG;
+			break;
+
 		case T_CreateExtensionStmt:
 			tag = CMDTAG_CREATE_EXTENSION;
 			break;
@@ -3168,6 +3200,9 @@ CreateCommandTag(Node *parsetree)
 					break;
 				case OBJECT_TABLESPACE:
 					tag = CMDTAG_DROP_TABLESPACE;
+					break;
+				case OBJECT_TAG:
+					tag = CMDTAG_DROP_TAG;
 					break;
 				case OBJECT_EXTPROTOCOL:
 					tag = CMDTAG_DROP_PROTOCOL;

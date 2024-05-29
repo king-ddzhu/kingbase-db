@@ -2901,6 +2901,7 @@ _outCreateStmtInfo(StringInfo str, const CreateStmt *node)
 
 	WRITE_NODE_FIELD(part_idx_oids);
 	WRITE_NODE_FIELD(part_idx_names);
+	WRITE_NODE_FIELD(tags);
 
 	/*
 	 * Some extra checks to make sure we didn't get lost
@@ -5030,6 +5031,15 @@ outNode(StringInfo str, const void *obj)
 
 			case T_CreateSchemaStmt:
 				_outCreateSchemaStmt(str, obj);
+				break;
+			case T_CreateTagStmt:
+				_outCreateTagStmt(str, obj);
+				break;
+			case T_AlterTagStmt:
+				_outAlterTagStmt(str, obj);
+				break;
+			case T_DropTagStmt:
+				_outDropTagStmt(str, obj);
 				break;
 			case T_CreatePLangStmt:
 				_outCreatePLangStmt(str, obj);

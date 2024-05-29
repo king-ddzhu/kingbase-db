@@ -54,6 +54,7 @@
 #include "commands/defrem.h"
 #include "commands/seclabel.h"
 #include "commands/tablespace.h"
+#include "commands/tag.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "pgstat.h"
@@ -620,6 +621,20 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 							new_record, new_record_nulls);
 
 	CatalogTupleInsert(pg_database_rel, tuple);
+	
+	CommandCounterIncrement();
+
+	/*
+	 * Create tag description.
+	 */
+	if (stmt->tags)
+	{
+		AddTagDescriptions(stmt->tags,
+					 	   DatabaseRelationId,
+					 	   dboid,
+					 	   InvalidAttrNumber,
+					 	   dbname);
+	}
 
 	if (shouldDispatch)
 	{
@@ -1067,6 +1082,14 @@ dropdb(const char *dbname, bool missing_ok, bool force)
 	 */
 	DeleteSharedComments(db_id, DatabaseRelationId);
 	DeleteSharedSecurityLabel(db_id, DatabaseRelationId);
+	
+	/*
+	 * Delete any tag description and associated dependencies.
+	 */
+	DeleteTagDescriptions(DatabaseRelationId,
+						  db_id,
+						  InvalidAttrNumber,
+						  dbname);
 
 	/*
 	 * Remove settings associated with this database
@@ -1808,6 +1831,24 @@ AlterDatabase(ParseState *pstate, AlterDatabaseStmt *stmt, bool isTopLevel)
 	newtuple = heap_modify_tuple(tuple, RelationGetDescr(rel), new_record,
 								 new_record_nulls, new_record_repl);
 	CatalogTupleUpdate(rel, &tuple->t_self, newtuple);
+	
+	if (stmt->tags)
+	{
+		AlterTagDescriptions(stmt->tags,
+					   		 DatabaseRelationId,
+					   		 dboid,
+					   		 InvalidAttrNumber,
+					   		 stmt->dbname);
+	}
+	
+	if (stmt->unsettag)
+	{
+		UnsetTagDescriptions(stmt->tags,
+					   		 DatabaseRelationId,
+					   		 dboid,
+					   		 InvalidAttrNumber,
+					   		 stmt->dbname);
+	}
 
 	InvokeObjectPostAlterHook(DatabaseRelationId, dboid, 0);
 

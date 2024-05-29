@@ -744,6 +744,7 @@ _readCreateStmt_common(CreateStmt *local_node)
 
 	READ_NODE_FIELD(part_idx_oids);
 	READ_NODE_FIELD(part_idx_names);
+	READ_NODE_FIELD(tags);
 
 	/*
 	 * Some extra checks to make sure we didn't get lost
@@ -2547,6 +2548,15 @@ readNodeBinary(void)
 				break;
 			case T_CreateSchemaStmt:
 				return_value = _readCreateSchemaStmt();
+				break;
+			case T_CreateTagStmt:
+				return_value = _readCreateTagStmt();
+				break;
+			case T_AlterTagStmt:
+				return_value = _readAlterTagStmt();
+				break;
+			case T_DropTagStmt:
+				return_value = _readDropTagStmt();
 				break;
 			case T_CreatePLangStmt:
 				return_value = _readCreatePLangStmt();

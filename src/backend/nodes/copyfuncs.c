@@ -4130,6 +4130,7 @@ CopyCreateStmtFields(const CreateStmt *from, CreateStmt *newnode)
 
 	COPY_NODE_FIELD(part_idx_oids);
 	COPY_NODE_FIELD(part_idx_names);
+	COPY_NODE_FIELD(tags);
 }
 
 static CreateStmt *
@@ -4183,6 +4184,7 @@ _copyCreateExternalStmt(const CreateExternalStmt *from)
 	COPY_NODE_FIELD(extOptions);
 	COPY_NODE_FIELD(encoding);
 	COPY_NODE_FIELD(distributedBy);
+	COPY_NODE_FIELD(tags);
 
 	return newnode;
 }
@@ -4682,6 +4684,7 @@ _copyCreatedbStmt(const CreatedbStmt *from)
 
 	COPY_STRING_FIELD(dbname);
 	COPY_NODE_FIELD(options);
+	COPY_NODE_FIELD(tags);
 
 	return newnode;
 }
@@ -4693,6 +4696,8 @@ _copyAlterDatabaseStmt(const AlterDatabaseStmt *from)
 
 	COPY_STRING_FIELD(dbname);
 	COPY_NODE_FIELD(options);
+	COPY_NODE_FIELD(tags);
+	COPY_SCALAR_FIELD(unsettag);
 
 	return newnode;
 }
@@ -5238,6 +5243,7 @@ _copyCreateRoleStmt(const CreateRoleStmt *from)
 	COPY_SCALAR_FIELD(stmt_type);
 	COPY_STRING_FIELD(role);
 	COPY_NODE_FIELD(options);
+	COPY_NODE_FIELD(tags);
 
 	return newnode;
 }
@@ -5283,6 +5289,8 @@ _copyAlterRoleStmt(const AlterRoleStmt *from)
 	COPY_NODE_FIELD(role);
 	COPY_NODE_FIELD(options);
 	COPY_SCALAR_FIELD(action);
+	COPY_NODE_FIELD(tags);
+	COPY_SCALAR_FIELD(unsettag);
 
 	return newnode;
 }
@@ -5399,6 +5407,43 @@ _copyCreateSchemaStmt(const CreateSchemaStmt *from)
 	COPY_SCALAR_FIELD(istemp);
 	COPY_SCALAR_FIELD(pop_search_path);
 
+	return newnode;
+}
+
+static CreateTagStmt *
+_copyCreateTagStmt(const CreateTagStmt *from)
+{
+	CreateTagStmt *newnode = makeNode(CreateTagStmt);
+	
+	COPY_STRING_FIELD(tag_name);
+	COPY_SCALAR_FIELD(missing_ok);
+	COPY_NODE_FIELD(allowed_values);
+	
+	return newnode;
+}
+
+static AlterTagStmt *
+_copyAlterTagStmt(const AlterTagStmt *from)
+{
+	AlterTagStmt *newnode = makeNode(AlterTagStmt);
+	
+	COPY_STRING_FIELD(tag_name);
+	COPY_SCALAR_FIELD(action);
+	COPY_NODE_FIELD(tag_values);
+	COPY_SCALAR_FIELD(missing_ok);
+	COPY_SCALAR_FIELD(unset);
+	
+	return newnode;
+}
+
+static DropTagStmt *
+_copyDropTagStmt(const DropTagStmt *from)
+{
+	DropTagStmt *newnode = makeNode(DropTagStmt);
+	
+	COPY_NODE_FIELD(tags);
+	COPY_SCALAR_FIELD(missing_ok);
+	
 	return newnode;
 }
 
@@ -6945,6 +6990,15 @@ copyObjectImpl(const void *from)
 			break;
 		case T_CreateSchemaStmt:
 			retval = _copyCreateSchemaStmt(from);
+			break;
+		case T_CreateTagStmt:
+			retval = _copyCreateTagStmt(from);
+			break;
+		case T_AlterTagStmt:
+			retval = _copyAlterTagStmt(from);
+			break;
+		case T_DropTagStmt:
+			retval = _copyDropTagStmt(from);
 			break;
 		case T_CreateConversionStmt:
 			retval = _copyCreateConversionStmt(from);

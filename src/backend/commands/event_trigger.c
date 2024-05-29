@@ -1003,6 +1003,8 @@ EventTriggerSupportsObjectType(ObjectType obtype)
 			return true;
 		case OBJECT_RESQUEUE:
 		case OBJECT_RESGROUP:
+		case OBJECT_TAG:
+//		case OBJECT_TAG_DESCRIPTION:
 			return false;
 
 			/*
@@ -1030,6 +1032,8 @@ EventTriggerSupportsObjectClass(ObjectClass objclass)
 		case OCLASS_PASSWORDHISTORY:
 		case OCLASS_STORAGE_SERVER:
 		case OCLASS_STORAGE_USER_MAPPING:
+		case OCLASS_TAG:
+		case OCLASS_TAG_DESCRIPTION:
 			/* no support for global objects */
 			return false;
 		case OCLASS_EVENT_TRIGGER:
@@ -2167,6 +2171,7 @@ stringify_grant_objtype(ObjectType objtype)
 		case OBJECT_STATISTIC_EXT:
 		case OBJECT_SUBSCRIPTION:
 		case OBJECT_TABCONSTRAINT:
+		case OBJECT_TAG:
 		case OBJECT_TRANSFORM:
 		case OBJECT_TRIGGER:
 		case OBJECT_TSCONFIGURATION:
@@ -2181,6 +2186,7 @@ stringify_grant_objtype(ObjectType objtype)
 		case OBJECT_RESGROUP:
 		case OBJECT_PROFILE:
 		case OBJECT_DIRECTORY_TABLE:
+//		case OBJECT_TAG_DESCRIPTION:
 			elog(ERROR, "unsupported object type: %d", (int) objtype);
 	}
 
@@ -2257,6 +2263,7 @@ stringify_adefprivs_objtype(ObjectType objtype)
 		case OBJECT_STATISTIC_EXT:
 		case OBJECT_SUBSCRIPTION:
 		case OBJECT_TABCONSTRAINT:
+		case OBJECT_TAG:
 		case OBJECT_TRANSFORM:
 		case OBJECT_TRIGGER:
 		case OBJECT_TSCONFIGURATION:
@@ -2271,6 +2278,7 @@ stringify_adefprivs_objtype(ObjectType objtype)
 		case OBJECT_RESGROUP:
 		case OBJECT_PROFILE:
 		case OBJECT_DIRECTORY_TABLE:
+//		case OBJECT_TAG_DESCRIPTION:
 			elog(ERROR, "unsupported object type: %d", (int) objtype);
 	}
 

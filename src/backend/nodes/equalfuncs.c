@@ -1389,6 +1389,7 @@ _equalCreateStmt(const CreateStmt *a, const CreateStmt *b)
 	COMPARE_SCALAR_FIELD(buildAoBlkdir);
 	COMPARE_NODE_FIELD(attr_encodings);
 	COMPARE_SCALAR_FIELD(isCtas);
+	COMPARE_NODE_FIELD(tags);
 
 	return true;
 }
@@ -1439,6 +1440,7 @@ _equalCreateExternalStmt(const CreateExternalStmt *a, const CreateExternalStmt *
 	COMPARE_NODE_FIELD(extOptions);
 	COMPARE_NODE_FIELD(encoding);
 	COMPARE_NODE_FIELD(distributedBy);
+	COMPARE_NODE_FIELD(tags);
 
 	return true;
 }
@@ -1874,6 +1876,7 @@ _equalCreatedbStmt(const CreatedbStmt *a, const CreatedbStmt *b)
 {
 	COMPARE_STRING_FIELD(dbname);
 	COMPARE_NODE_FIELD(options);
+	COMPARE_NODE_FIELD(tags);
 	return true;
 }
 
@@ -1882,6 +1885,8 @@ _equalAlterDatabaseStmt(const AlterDatabaseStmt *a, const AlterDatabaseStmt *b)
 {
 	COMPARE_STRING_FIELD(dbname);
 	COMPARE_NODE_FIELD(options);
+	COMPARE_NODE_FIELD(tags);
+	COMPARE_SCALAR_FIELD(unsettag);
 
 	return true;
 }
@@ -2346,6 +2351,7 @@ _equalCreateRoleStmt(const CreateRoleStmt *a, const CreateRoleStmt *b)
 	COMPARE_SCALAR_FIELD(stmt_type);
 	COMPARE_STRING_FIELD(role);
 	COMPARE_NODE_FIELD(options);
+	COMPARE_NODE_FIELD(tags);
 
 	return true;
 }
@@ -2383,6 +2389,8 @@ _equalAlterRoleStmt(const AlterRoleStmt *a, const AlterRoleStmt *b)
 	COMPARE_NODE_FIELD(role);
 	COMPARE_NODE_FIELD(options);
 	COMPARE_SCALAR_FIELD(action);
+	COMPARE_NODE_FIELD(tags);
+	COMPARE_SCALAR_FIELD(unsettag);
 
 	return true;
 }
@@ -2481,6 +2489,37 @@ _equalCreateSchemaStmt(const CreateSchemaStmt *a, const CreateSchemaStmt *b)
 	COMPARE_SCALAR_FIELD(istemp);
 	COMPARE_SCALAR_FIELD(pop_search_path);
 
+	return true;
+}
+
+static bool
+_equalCreateTagStmt(const CreateTagStmt *a, const CreateTagStmt *b)
+{
+	COMPARE_STRING_FIELD(tag_name);
+	COMPARE_SCALAR_FIELD(missing_ok);
+	COMPARE_NODE_FIELD(allowed_values);
+	
+	return true;
+}
+
+static bool
+_equalAlterTagStmt(const AlterTagStmt *a, const AlterTagStmt *b)
+{
+	COMPARE_STRING_FIELD(tag_name);
+	COMPARE_SCALAR_FIELD(action);
+	COMPARE_NODE_FIELD(tag_values);
+	COMPARE_SCALAR_FIELD(missing_ok);
+	COMPARE_SCALAR_FIELD(unset);
+	
+	return true;
+}
+
+static bool
+_equalDropTagStmt(const DropTagStmt *a, const DropTagStmt *b)
+{
+	COMPARE_NODE_FIELD(tags);
+	COMPARE_SCALAR_FIELD(missing_ok);
+	
 	return true;
 }
 
@@ -4095,6 +4134,15 @@ equal(const void *a, const void *b)
 			break;
 		case T_CreateSchemaStmt:
 			retval = _equalCreateSchemaStmt(a, b);
+			break;
+		case T_CreateTagStmt:
+			retval = _equalCreateTagStmt(a, b);
+			break;
+		case T_AlterTagStmt:
+			retval = _equalAlterTagStmt(a, b);
+			break;
+		case T_DropTagStmt:
+			retval = _equalDropTagStmt(a, b);
 			break;
 		case T_CreateConversionStmt:
 			retval = _equalCreateConversionStmt(a, b);
