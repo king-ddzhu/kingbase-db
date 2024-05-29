@@ -4130,6 +4130,7 @@ CopyCreateStmtFields(const CreateStmt *from, CreateStmt *newnode)
 
 	COPY_NODE_FIELD(part_idx_oids);
 	COPY_NODE_FIELD(part_idx_names);
+	COPY_NODE_FIELD(tags);
 }
 
 static CreateStmt *
@@ -4183,6 +4184,7 @@ _copyCreateExternalStmt(const CreateExternalStmt *from)
 	COPY_NODE_FIELD(extOptions);
 	COPY_NODE_FIELD(encoding);
 	COPY_NODE_FIELD(distributedBy);
+	COPY_NODE_FIELD(tags);
 
 	return newnode;
 }

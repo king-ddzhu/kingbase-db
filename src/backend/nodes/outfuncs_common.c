@@ -250,6 +250,7 @@ _outQueryDispatchDesc(StringInfo str, const QueryDispatchDesc *node)
 	WRITE_OID_FIELD(tableid);
 	WRITE_INT_FIELD(snaplen);
 	WRITE_STRING_FIELD(snapname);
+	WRITE_NODE_FIELD(tags);
 }
 
 static void
@@ -568,6 +569,7 @@ _outCreateExternalStmt(StringInfo str, const CreateExternalStmt *node)
 	WRITE_NODE_FIELD(extOptions);
 	WRITE_NODE_FIELD(encoding);
 	WRITE_NODE_FIELD(distributedBy);
+	WRITE_NODE_FIELD(tags);
 }
 
 static void

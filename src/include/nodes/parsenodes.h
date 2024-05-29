@@ -2500,6 +2500,7 @@ typedef struct CreateStmt
 	/* names chosen for partition indexes */
 	List	   *part_idx_oids;
 	List	   *part_idx_names;
+	List	   *tags;			/* List of tags DefElem nodes */
 } CreateStmt;
 
 /* ----------------------
@@ -2536,7 +2537,7 @@ typedef struct CreateExternalStmt
 	List	   *encoding;		/* List (size 1 max) of DefElem nodes for
 								   data encoding */
 	DistributedBy *distributedBy;   /* what columns we distribute the data by */
-
+	List	   *tags;			/* List of tags DefElem nodes */
 } CreateExternalStmt;
 
 /* ----------------------
@@ -4403,6 +4404,7 @@ typedef struct CreateWarehouseStmt
 	NodeTag		type;
 	char		*whname;
 	List		*options;		/* List of DefElem nodes */
+	List		*tags;			/* List of tag DefElem nodes */
 } CreateWarehouseStmt;
 
 typedef struct DropWarehouseStmt

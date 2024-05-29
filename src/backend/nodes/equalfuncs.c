@@ -1389,6 +1389,7 @@ _equalCreateStmt(const CreateStmt *a, const CreateStmt *b)
 	COMPARE_SCALAR_FIELD(buildAoBlkdir);
 	COMPARE_NODE_FIELD(attr_encodings);
 	COMPARE_SCALAR_FIELD(isCtas);
+	COMPARE_NODE_FIELD(tags);
 
 	return true;
 }
@@ -1439,6 +1440,7 @@ _equalCreateExternalStmt(const CreateExternalStmt *a, const CreateExternalStmt *
 	COMPARE_NODE_FIELD(extOptions);
 	COMPARE_NODE_FIELD(encoding);
 	COMPARE_NODE_FIELD(distributedBy);
+	COMPARE_NODE_FIELD(tags);
 
 	return true;
 }

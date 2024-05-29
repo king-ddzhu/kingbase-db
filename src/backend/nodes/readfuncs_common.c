@@ -767,6 +767,7 @@ _readCreateExternalStmt(void)
 	READ_NODE_FIELD(extOptions);
 	READ_NODE_FIELD(encoding);
 	READ_NODE_FIELD(distributedBy);
+	READ_NODE_FIELD(tags);
 
 	READ_DONE();
 }

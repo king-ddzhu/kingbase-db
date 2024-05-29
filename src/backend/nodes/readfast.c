@@ -744,6 +744,7 @@ _readCreateStmt_common(CreateStmt *local_node)
 
 	READ_NODE_FIELD(part_idx_oids);
 	READ_NODE_FIELD(part_idx_names);
+	READ_NODE_FIELD(tags);
 
 	/*
 	 * Some extra checks to make sure we didn't get lost

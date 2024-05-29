@@ -624,6 +624,9 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 	
 	CommandCounterIncrement();
 
+	/*
+	 * Create tag description.
+	 */
 	if (stmt->tags)
 	{
 		AddTagDescriptions(stmt->tags,

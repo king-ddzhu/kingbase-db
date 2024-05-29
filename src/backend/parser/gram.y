@@ -4922,7 +4922,7 @@ copy_generic_opt_arg_list_item:
 CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 			OptInherit OptFirstPartitionSpec table_access_method_clause OptWith
 			OnCommitOption OptTableSpace
-			OptDistributedBy OptSecondPartitionSpec
+			OptDistributedBy OptSecondPartitionSpec OptTagOptList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -4943,6 +4943,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->tablespacename = $13;
 					n->if_not_exists = false;
 					n->distributedBy = (DistributedBy *) $14;
+					n->tags = $16;
 					n->relKind = RELKIND_RELATION;
 
 					n->accessMethod = greenplumLegacyAOoptions(n->accessMethod, &n->options);
@@ -4952,7 +4953,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name '('
 			OptTableElementList ')' OptInherit OptFirstPartitionSpec table_access_method_clause
 			OptWith OnCommitOption OptTableSpace
-			OptDistributedBy OptSecondPartitionSpec
+			OptDistributedBy OptSecondPartitionSpec OptTagOptList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -4973,6 +4974,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->tablespacename = $16;
 					n->if_not_exists = true;
 					n->distributedBy = (DistributedBy *) $17;
+					n->tags = $19;
 					n->relKind = RELKIND_RELATION;
 
 					n->accessMethod = greenplumLegacyAOoptions(n->accessMethod, &n->options);
@@ -4982,7 +4984,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 		| CREATE OptTemp TABLE qualified_name OF any_name
 			OptTypedTableElementList OptFirstPartitionSpec table_access_method_clause
 			OptWith OnCommitOption OptTableSpace
-			OptDistributedBy OptSecondPartitionSpec
+			OptDistributedBy OptSecondPartitionSpec OptTagOptList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -5004,6 +5006,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->tablespacename = $12;
 					n->if_not_exists = false;
 					n->distributedBy = (DistributedBy *) $13;
+					n->tags = $15;
 					n->relKind = RELKIND_RELATION;
 
 					n->accessMethod = greenplumLegacyAOoptions(n->accessMethod, &n->options);
@@ -5013,7 +5016,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name OF any_name
 			OptTypedTableElementList OptFirstPartitionSpec table_access_method_clause
 			OptWith OnCommitOption OptTableSpace
-			OptDistributedBy OptSecondPartitionSpec
+			OptDistributedBy OptSecondPartitionSpec OptTagOptList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -5035,6 +5038,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->tablespacename = $15;
 					n->if_not_exists = true;
 					n->distributedBy = (DistributedBy *) $16;
+					n->tags = $18;
 					n->relKind = RELKIND_RELATION;
 
 					n->accessMethod = greenplumLegacyAOoptions(n->accessMethod, &n->options);
@@ -5044,7 +5048,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 		| CREATE OptTemp TABLE qualified_name PARTITION OF qualified_name
 			OptTypedTableElementList PartitionBoundSpec OptFirstPartitionSpec
 			table_access_method_clause OptWith OnCommitOption OptTableSpace
-			OptSecondPartitionSpec
+			OptSecondPartitionSpec OptTagOptList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -5066,6 +5070,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->tablespacename = $14;
 					n->if_not_exists = false;
 					n->distributedBy = NULL;
+					n->tags = $16;
 					n->relKind = RELKIND_RELATION;
 
 					n->accessMethod = greenplumLegacyAOoptions(n->accessMethod, &n->options);
@@ -5075,7 +5080,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 		| CREATE OptTemp TABLE IF_P NOT EXISTS qualified_name PARTITION OF
 			qualified_name OptTypedTableElementList PartitionBoundSpec OptFirstPartitionSpec
 			table_access_method_clause OptWith OnCommitOption OptTableSpace
-			OptSecondPartitionSpec
+			OptSecondPartitionSpec OptTagOptList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -5097,6 +5102,7 @@ CreateStmt:	CREATE OptTemp TABLE qualified_name '(' OptTableElementList ')'
 					n->tablespacename = $17;
 					n->if_not_exists = true;
 					n->distributedBy = NULL;
+					n->tags = $19;
 					n->relKind = RELKIND_RELATION;
 
 					n->accessMethod = greenplumLegacyAOoptions(n->accessMethod, &n->options);
@@ -6642,7 +6648,7 @@ opt_with_data:
  *****************************************************************************/
 	
 CreateExternalStmt:	CREATE OptWritable EXTERNAL OptWeb OptTemp TABLE qualified_name '(' OptExtTableElementList ')' 
-					ExtTypedesc FORMAT Sconst format_opt ext_options_opt ext_opt_encoding_list ExtSingleRowErrorHandling OptDistributedBy
+					ExtTypedesc FORMAT Sconst format_opt ext_options_opt ext_opt_encoding_list ExtSingleRowErrorHandling OptDistributedBy OptTagOptList
 						{
 							CreateExternalStmt *n = makeNode(CreateExternalStmt);
 							n->iswritable = $2;
@@ -6657,6 +6663,7 @@ CreateExternalStmt:	CREATE OptWritable EXTERNAL OptWeb OptTemp TABLE qualified_n
 							n->encoding = $16;
 							n->sreh = $17;
 							n->distributedBy = (DistributedBy *) $18;
+							n->tags = $19;
 							
 							/* various syntax checks for EXECUTE external table */
 							if(((ExtTableTypeDesc *) n->exttypedesc)->exttabletype == EXTTBL_TYPE_EXECUTE)
@@ -8041,7 +8048,7 @@ DropStorageServerStmt:
 CreateForeignTableStmt:
 		CREATE FOREIGN TABLE qualified_name
 			'(' OptTableElementList ')'
-			OptInherit SERVER name create_generic_options OptDistributedBy
+			OptInherit SERVER name create_generic_options OptDistributedBy OptTagOptList
 				{
 					CreateForeignTableStmt *n = makeNode(CreateForeignTableStmt);
 					$4->relpersistence = RELPERSISTENCE_PERMANENT;
@@ -8058,6 +8065,7 @@ CreateForeignTableStmt:
 					n->servername = $10;
 					n->options = $11;
 					n->distributedBy = (DistributedBy *) $12;
+					n->base.tags = $13;
 					if (strcmp(n->servername, GP_EXTTABLE_SERVER_NAME) != 0 && n->distributedBy)
 					{
 						ereport(ERROR,
@@ -8068,7 +8076,7 @@ CreateForeignTableStmt:
 				}
 		| CREATE FOREIGN TABLE IF_P NOT EXISTS qualified_name
 			'(' OptTableElementList ')'
-			OptInherit SERVER name create_generic_options
+			OptInherit SERVER name create_generic_options OptTagOptList
 				{
 					CreateForeignTableStmt *n = makeNode(CreateForeignTableStmt);
 					$7->relpersistence = RELPERSISTENCE_PERMANENT;
@@ -8084,11 +8092,12 @@ CreateForeignTableStmt:
 					/* FDW-specific data */
 					n->servername = $13;
 					n->options = $14;
+					n->base.tags = $15;
 					$$ = (Node *) n;
 				}
 		| CREATE FOREIGN TABLE qualified_name
 			PARTITION OF qualified_name OptTypedTableElementList PartitionBoundSpec
-			SERVER name create_generic_options
+			SERVER name create_generic_options OptTagOptList
 				{
 					CreateForeignTableStmt *n = makeNode(CreateForeignTableStmt);
 					$4->relpersistence = RELPERSISTENCE_PERMANENT;
@@ -8105,11 +8114,12 @@ CreateForeignTableStmt:
 					/* FDW-specific data */
 					n->servername = $11;
 					n->options = $12;
+					n->base.tags = $13;
 					$$ = (Node *) n;
 				}
 		| CREATE FOREIGN TABLE IF_P NOT EXISTS qualified_name
 			PARTITION OF qualified_name OptTypedTableElementList PartitionBoundSpec
-			SERVER name create_generic_options
+			SERVER name create_generic_options OptTagOptList
 				{
 					CreateForeignTableStmt *n = makeNode(CreateForeignTableStmt);
 					$7->relpersistence = RELPERSISTENCE_PERMANENT;
@@ -8126,6 +8136,7 @@ CreateForeignTableStmt:
 					/* FDW-specific data */
 					n->servername = $14;
 					n->options = $15;
+					n->base.tags = $16;
 					$$ = (Node *) n;
 				}
 		;
@@ -8336,7 +8347,7 @@ AlterStorageUserMappingStmt:
 
 CreateDirectoryTableStmt:
             CREATE DIRECTORY TABLE qualified_name
-            table_access_method_clause OptTableSpace OptDistributedBy
+            table_access_method_clause OptTableSpace OptDistributedBy OptTagOptList
                 {
                     CreateDirectoryTableStmt *n = makeNode(CreateDirectoryTableStmt);
                     $4->relpersistence = RELPERSISTENCE_PERMANENT;
@@ -8356,12 +8367,13 @@ CreateDirectoryTableStmt:
                                      errmsg("Create directory table is not allowed to set distributed by."),
                                      parser_errposition(@7)));
                     n->base.relKind = RELKIND_DIRECTORY_TABLE;
+                    n->base.tags = $8;
                     n->tablespacename = $6;
 
                     $$ = (Node *) n;
                 }
             | CREATE DIRECTORY TABLE IF_P NOT EXISTS qualified_name
-            table_access_method_clause OptTableSpace OptDistributedBy
+            table_access_method_clause OptTableSpace OptDistributedBy OptTagOptList
                 {
                     CreateDirectoryTableStmt *n = makeNode(CreateDirectoryTableStmt);
                     $7->relpersistence = RELPERSISTENCE_PERMANENT;
@@ -8381,6 +8393,7 @@ CreateDirectoryTableStmt:
                                      errmsg("Create directory table is not allowed to set distributed by."),
                                      parser_errposition(@10)));
                     n->base.relKind = RELKIND_DIRECTORY_TABLE;
+                    n->base.tags = $11;
                     n->tablespacename = $9;
 
                     $$ = (Node *) n;
@@ -12955,11 +12968,12 @@ publication_for_tables:
  *
  *****************************************************************************/
 
-CreateWarehouseStmt: CREATE WAREHOUSE name OptWarehouseOptList
+CreateWarehouseStmt: CREATE WAREHOUSE name OptWarehouseOptList OptTagOptList
 						{
 							CreateWarehouseStmt *n = makeNode(CreateWarehouseStmt);
 							n->whname = $3;
 							n->options = $4;
+							n->tags = $5;
 							$$ = (Node *) n;
 						}
 				;

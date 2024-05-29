@@ -73,6 +73,7 @@
 #include "commands/sequence.h"
 #include "commands/tablecmds.h"
 #include "commands/tablespace.h"
+#include "commands/tag.h"
 #include "commands/trigger.h"
 #include "commands/typecmds.h"
 #include "commands/user.h"
@@ -1162,6 +1163,18 @@ DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 										  typaddress,
 										  valid_opts);
 
+	/*
+	 * Create tag description.
+	 */
+	if (stmt->tags)
+	{
+		AddTagDescriptions(stmt->tags,
+						   RelationRelationId,
+						   relationId,
+						   InvalidAttrNumber,
+						   relname);
+	}
+	
 	/*
 	 * We must bump the command counter to make the newly-created relation
 	 * tuple visible for opening.

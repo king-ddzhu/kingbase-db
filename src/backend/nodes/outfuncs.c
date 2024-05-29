@@ -2901,6 +2901,7 @@ _outCreateStmtInfo(StringInfo str, const CreateStmt *node)
 
 	WRITE_NODE_FIELD(part_idx_oids);
 	WRITE_NODE_FIELD(part_idx_names);
+	WRITE_NODE_FIELD(tags);
 
 	/*
 	 * Some extra checks to make sure we didn't get lost
