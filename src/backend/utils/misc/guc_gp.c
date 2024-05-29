@@ -160,7 +160,10 @@ bool		Debug_datumstream_read_print_varlena_info = false;
 bool		Debug_datumstream_write_use_small_initial_buffers = false;
 bool		gp_create_table_random_default_distribution = true;
 bool		gp_allow_non_uniform_partitioning_ddl = true;
+bool		gp_print_create_gang_time = false;
 int			dtx_phase2_retry_second = 0;
+
+bool gp_log_suboverflow_statement = false;
 
 bool		log_dispatch_stats = false;
 
@@ -226,6 +229,7 @@ double		gp_resource_group_cpu_limit;
 double		gp_resource_group_memory_limit;
 bool		gp_resource_group_bypass;
 bool		gp_resource_group_cpu_ceiling_enforcement;
+bool		gp_resource_group_enable_recalculate_query_mem;
 
 /* Metrics collector debug GUC */
 bool		vmem_process_interrupt = false;
@@ -301,6 +305,7 @@ bool		optimizer_xforms[OPTIMIZER_XFORMS_COUNT] = {[0 ... OPTIMIZER_XFORMS_COUNT 
 char	   *optimizer_search_strategy_path = NULL;
 
 /* GUCs to tell Optimizer to enable a physical operator */
+bool		optimizer_enable_nljoin;
 bool		optimizer_enable_indexjoin;
 bool		optimizer_enable_motions_masteronly_queries;
 bool		optimizer_enable_motions;
@@ -339,7 +344,7 @@ bool		optimizer_enable_mergejoin;
 bool		optimizer_prune_unused_columns;
 bool		optimizer_enable_redistribute_nestloop_loj_inner_child;
 bool		optimizer_force_comprehensive_join_implementation;
-
+bool		optimizer_enable_replicated_table;
 
 /* Optimizer plan enumeration related GUCs */
 bool		optimizer_enumerate_plans;
@@ -434,6 +439,11 @@ int  gp_predicate_pushdown_sample_rows;
 bool        enable_offload_entry_to_qe = false;
 bool enable_answer_query_using_materialized_views = false;
 
+bool		gp_log_endpoints = false;
+
+/* optional reject to  parse ambigous 5-digits date in YYYMMDD format */
+bool		gp_allow_date_field_width_5digits = false;
+
 static const struct config_enum_entry gp_log_format_options[] = {
 	{"text", 0},
 	{"csv", 1},
@@ -521,6 +531,12 @@ static const struct config_enum_entry gp_interconnect_types[] = {
 #ifdef ENABLE_IC_PROXY
 	{"proxy", INTERCONNECT_TYPE_PROXY},
 #endif  /* ENABLE_IC_PROXY */
+	{NULL, 0}
+};
+
+static const struct config_enum_entry gp_interconnect_address_types[] = {
+	{"wildcard", INTERCONNECT_ADDRESS_TYPE_WILDCARD},
+	{"unicast", INTERCONNECT_ADDRESS_TYPE_UNICAST},
 	{NULL, 0}
 };
 
@@ -1785,6 +1801,17 @@ struct config_bool ConfigureNamesBool_gp[] =
 	},
 
 	{
+		{"gp_print_create_gang_time", PGC_USERSET, CUSTOM_OPTIONS,
+			gettext_noop("Allow print information about create gang time."),
+			NULL,
+			GUC_NOT_IN_SAMPLE
+		},
+		&gp_print_create_gang_time,
+		false,
+		NULL, NULL, NULL
+	},
+
+	{
 		{"gp_recursive_cte_prototype", PGC_USERSET, DEPRECATED_OPTIONS,
 			gettext_noop("Enable RECURSIVE clauses in CTE queries (deprecated option, use \"gp_recursive_cte\" instead)."),
 			NULL,
@@ -2051,6 +2078,16 @@ struct config_bool ConfigureNamesBool_gp[] =
 			GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE
 		},
 		&optimizer_dpe_stats,
+		true,
+		NULL, NULL, NULL
+	},
+	{
+		{"optimizer_enable_nljoin", PGC_USERSET, DEVELOPER_OPTIONS,
+			gettext_noop("Enable nested loops join plans in the optimizer."),
+			NULL,
+			GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE
+		},
+		&optimizer_enable_nljoin,
 		true,
 		NULL, NULL, NULL
 	},
@@ -2824,6 +2861,16 @@ struct config_bool ConfigureNamesBool_gp[] =
 	},
 
 	{
+		{"gp_resource_group_enable_recalculate_query_mem", PGC_USERSET, RESOURCES,
+		 	gettext_noop("Enable resource group re-calculate the query_mem on QE"),
+		 	NULL
+		},
+		&gp_resource_group_enable_recalculate_query_mem,
+		true,
+		NULL, NULL, NULL
+	},
+
+	{
 		{"stats_queue_level", PGC_SUSET, STATS_COLLECTOR,
 			gettext_noop("Collects resource queue-level statistics on database activity."),
 			NULL
@@ -2850,6 +2897,27 @@ struct config_bool ConfigureNamesBool_gp[] =
 		false, NULL, NULL
     },
 
+	{
+		{"gp_log_endpoints", PGC_SUSET, LOGGING_WHAT,
+			gettext_noop("Prints endpoints information to server log."),
+			NULL,
+			GUC_SUPERUSER_ONLY | GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE
+		},
+		&gp_log_endpoints,
+		false,
+		NULL, NULL, NULL
+	},
+
+	{
+		{"gp_allow_date_field_width_5digits", PGC_USERSET, COMPAT_OPTIONS_PREVIOUS,
+			gettext_noop("Allow parsing input date field with exactly continous 5 digits in non-standard YYYMMDD timeformat (follow pg12+ behave)"),
+			NULL,
+			GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE
+		},
+		&gp_allow_date_field_width_5digits,
+		false,
+		NULL, NULL, NULL
+	},
 	{
 		{"optimizer_enable_eageragg", PGC_USERSET, DEVELOPER_OPTIONS,
 			gettext_noop("Enable Eager Agg transform for pushing aggregate below an innerjoin."),
@@ -3005,6 +3073,27 @@ struct config_bool ConfigureNamesBool_gp[] =
 		&enable_answer_query_using_materialized_views,
 		false,
 		NULL, NULL, NULL
+	},
+	{
+		{"optimizer_enable_replicated_table", PGC_USERSET, DEVELOPER_OPTIONS,
+		 gettext_noop("Enable replicated tables."),
+		 NULL,
+		 GUC_NOT_IN_SAMPLE
+		 },
+		 &optimizer_enable_replicated_table,
+		 true,
+		 NULL, NULL, NULL
+	},
+
+
+	{
+		{"gp_log_suboverflow_statement", PGC_SUSET, LOGGING_WHAT,
+		 gettext_noop("Enable logging of statements that cause subtransaction overflow."),
+		 NULL,
+		 },
+		 &gp_log_suboverflow_statement,
+		 false,
+		 NULL, NULL, NULL
 	},
 
 	/* End-of-list marker */
@@ -4844,6 +4933,16 @@ struct config_enum ConfigureNamesEnum_gp[] =
 		},
 		&Gp_interconnect_type,
 		INTERCONNECT_TYPE_UDPIFC, gp_interconnect_types,
+		NULL, NULL, NULL
+	},
+
+	{
+		{"gp_interconnect_address_type", PGC_BACKEND, GP_ARRAY_TUNING,
+		 gettext_noop("Sets the interconnect address type used for inter-node communication."),
+		 gettext_noop("Valid values are \"unicast\" and \"wildcard\"")
+		},
+		&Gp_interconnect_address_type,
+		INTERCONNECT_ADDRESS_TYPE_UNICAST, gp_interconnect_address_types,
 		NULL, NULL, NULL
 	},
 

@@ -80,6 +80,7 @@
 #include "utils/workfile_mgr.h"
 #include "utils/faultinjector.h"
 #include "utils/resource_manager.h"
+#include "utils/resgroup-ops.h"
 
 #include "catalog/pg_statistic.h"
 #include "catalog/pg_class.h"
@@ -114,6 +115,9 @@
 #include "cdb/cdbutil.h"
 #include "cdb/cdbendpoint.h"
 
+#define IS_PARALLEL_RETRIEVE_CURSOR(queryDesc)	(queryDesc->ddesc &&	\
+										queryDesc->ddesc->parallelCursorName &&	\
+										strlen(queryDesc->ddesc->parallelCursorName) > 0)
 
 /* Hooks for plugins to get control in ExecutorStart/Run/Finish/End */
 ExecutorStart_hook_type ExecutorStart_hook = NULL;
@@ -221,9 +225,6 @@ standard_ExecutorStart(QueryDesc *queryDesc, int eflags)
 	if (query_info_collect_hook)
 		(*query_info_collect_hook)(METRICS_QUERY_START, queryDesc);
 
-	/**
-	 * Distribute memory to operators.
-	 */
 	if (Gp_role == GP_ROLE_DISPATCH)
 	{
 		if (!IsResManagerMemoryPolicyNone() &&
@@ -232,27 +233,99 @@ standard_ExecutorStart(QueryDesc *queryDesc, int eflags)
 			elog(GP_RESMANAGER_MEMORY_LOG_LEVEL, "query requested %.0fKB of memory",
 				 (double) queryDesc->plannedstmt->query_mem / 1024.0);
 		}
+	}
 
-		/**
-		 * There are some statements that do not go through the resource queue, so we cannot
-		 * put in a strong assert here. Someday, we should fix resource queues.
+	/**
+	 * Distribute memory to operators.
+	 *
+	 * There are some statements that do not go through the resource queue, so we cannot
+	 * put in a strong assert here. Someday, we should fix resource queues.
+	 */
+	if (queryDesc->plannedstmt->query_mem > 0)
+	{
+		/*
+		 * Whether we should skip operator memory assignment
+		 * - We should never skip operator memory assignment on QD.
+		 * - On QE, not skip in case of resource group enabled, and customer allow QE re-calculate query_mem,
+		 * as the GUC `gp_resource_group_enable_recalculate_query_mem` set to on.
 		 */
-		if (queryDesc->plannedstmt->query_mem > 0)
+		bool	should_skip_operator_memory_assign = true;
+
+		if (Gp_role == GP_ROLE_EXECUTE)
 		{
-			switch(*gp_resmanager_memory_policy)
+			/*
+			 * If resource group is enabled, we should re-calculate query_mem on QE, because the memory
+			 * of the coordinator and segment nodes or the number of instance could be different.
+			 *
+			 * On QE, we only try to recalculate query_mem if resource group enabled. Otherwise, we will skip this
+			 * and the next operator memory assignment if resource queue enabled
+			 */
+			if (IsResGroupEnabled())
 			{
-				case RESMANAGER_MEMORY_POLICY_AUTO:
-					PolicyAutoAssignOperatorMemoryKB(queryDesc->plannedstmt,
-													 queryDesc->plannedstmt->query_mem);
-					break;
-				case RESMANAGER_MEMORY_POLICY_EAGER_FREE:
-					PolicyEagerFreeAssignOperatorMemoryKB(queryDesc->plannedstmt,
-														  queryDesc->plannedstmt->query_mem);
-					break;
-				default:
-					Assert(IsResManagerMemoryPolicyNone());
-					break;
+				int32 	total_memory_coordinator = queryDesc->plannedstmt->total_memory_coordinator;
+				int    	nsegments_coordinator = queryDesc->plannedstmt->nsegments_coordinator;
+
+				/*
+				 * memSpill is not in fallback mode, and we enable resource group re-calculate the query_mem on QE,
+				 * then re-calculate the query_mem and re-compute operatorMemKB using this new value
+				 */
+				if (total_memory_coordinator != 0 && nsegments_coordinator != 0)
+				{
+					should_skip_operator_memory_assign = false;
+
+					/* Get total system memory on the QE in MB */
+					int 	total_memory_segment = ResGroupOps_GetTotalMemory();
+					int 	nsegments_segment = ResGroupGetHostPrimaryCount();
+					uint64	coordinator_query_mem = queryDesc->plannedstmt->query_mem;
+
+					/*
+					 * In the resource group environment, when we calculate query_mem, we can roughly use the following
+					 * formula:
+					 *
+					 * 	query_mem = (total_memory * gp_resource_group_memory_limit * memory_limit / nsegments) * memory_spill_ratio / concurrency
+					 *
+					 * Only total_memory and nsegments could differ between QD and QE, so query_mem is proportional to
+					 * the system's available virtual memory and inversely proportional to the number of instances.
+					 */
+					queryDesc->plannedstmt->query_mem *= (total_memory_segment * 1.0 / nsegments_segment) /
+														 (total_memory_coordinator * 1.0 / nsegments_coordinator);
+
+					elog(DEBUG1, "re-calculate query_mem, original QD's query_mem: %.0fKB, after recalculation QE's query_mem: %.0fKB",
+						 (double) coordinator_query_mem / 1024.0  , (double) queryDesc->plannedstmt->query_mem / 1024.0);
+				}
 			}
+		}
+		else
+		{
+			/* On QD, we always traverse the plan tree and compute operatorMemKB */
+			should_skip_operator_memory_assign = false;
+		}
+
+		if (!should_skip_operator_memory_assign)
+		{
+			PG_TRY();
+			{
+				switch(*gp_resmanager_memory_policy)
+				{
+					case RESMANAGER_MEMORY_POLICY_AUTO:
+						PolicyAutoAssignOperatorMemoryKB(queryDesc->plannedstmt,
+													 queryDesc->plannedstmt->query_mem);
+						break;
+					case RESMANAGER_MEMORY_POLICY_EAGER_FREE:
+						PolicyEagerFreeAssignOperatorMemoryKB(queryDesc->plannedstmt,
+														  queryDesc->plannedstmt->query_mem);
+						break;
+					default:
+						Assert(IsResManagerMemoryPolicyNone());
+						break;
+				}
+			}
+			PG_CATCH();
+			{
+				mppExecutorCleanup(queryDesc);
+				PG_RE_THROW();
+			}
+			PG_END_TRY();
 		}
 	}
 
@@ -773,7 +846,7 @@ standard_ExecutorRun(QueryDesc *queryDesc,
 	DestReceiver *dest;
 	bool		sendTuples;
 	MemoryContext oldcontext;
-	EndpointExecState *endpointExecState = NULL;
+	bool		endpointCreated = false;
 	uint64 es_processed = 0;
 	/*
 	 * NOTE: Any local vars that are set in the PG_TRY block and examined in the
@@ -901,12 +974,7 @@ standard_ExecutorRun(QueryDesc *queryDesc,
 		}
 		else if (exec_identity == GP_ROOT_SLICE)
 		{
-			bool isParallelRetrieveCursor = false;
-			DestReceiver *endpointDest = NULL;
-
-			isParallelRetrieveCursor = (queryDesc->ddesc &&
-										queryDesc->ddesc->parallelCursorName &&
-										queryDesc->ddesc->parallelCursorName[0]);
+			DestReceiver *endpointDest;
 
 			/*
 			 * When run a root slice, and it is a PARALLEL RETRIEVE CURSOR, it means
@@ -917,32 +985,49 @@ standard_ExecutorRun(QueryDesc *queryDesc,
 			 * For the scenario: endpoint on QE, the query plan is changed,
 			 * the root slice also exists on QE.
 			 */
-			if (isParallelRetrieveCursor)
+			if (IS_PARALLEL_RETRIEVE_CURSOR(queryDesc))
 			{
-				endpointExecState = allocEndpointExecState();
 				SetupEndpointExecState(queryDesc->tupDesc,
 									   queryDesc->ddesc->parallelCursorName,
-									   endpointExecState);
-				endpointDest = endpointExecState->dest;
-				(endpointDest->rStartup)(endpointDest, operation, queryDesc->tupDesc);
-			}
+									   operation,
+									   &endpointDest);
+				endpointCreated = true;
 
-			/*
-			 * Run a root slice
-			 * It corresponds to the "normal" path through the executor
-			 * in that we enter the plan at the top and count on the
-			 * motion nodes at the fringe of the top slice to return
-			 * without ever calling nodes below them.
-			 */
-			ExecutePlan(estate,
-						queryDesc->planstate,
-						amIParallel,
-						operation,
-						isParallelRetrieveCursor ? true : sendTuples,
-						count,
-						direction,
-						isParallelRetrieveCursor? endpointDest : dest,
-						execute_once);
+				/*
+				 * Once the endpoint has been created in shared memory, send acknowledge
+				 * message to QD so DECLARE PARALLEL RETRIEVE CURSOR statement can finish.
+				 */
+				EndpointNotifyQD(ENDPOINT_READY_ACK_MSG);
+
+				ExecutePlan(estate,
+							queryDesc->planstate,
+							amIParallel,
+							operation,
+							true,
+							count,
+							direction,
+							endpointDest,
+							execute_once);
+			}
+			else
+			{
+				/*
+				 * Run a root slice
+				 * It corresponds to the "normal" path through the executor
+				 * in that we enter the plan at the top and count on the
+				 * motion nodes at the fringe of the top slice to return
+				 * without ever calling nodes below them.
+				 */
+				ExecutePlan(estate,
+							queryDesc->planstate,
+							amIParallel,
+							operation,
+							sendTuples,
+							count,
+							direction,
+							dest,
+							execute_once);
+			}
 		}
 		else
 		{
@@ -994,8 +1079,8 @@ standard_ExecutorRun(QueryDesc *queryDesc,
 	/*
 	 * shutdown tuple receiver, if we started it
 	 */
-	if (endpointExecState != NULL)
-		DestroyEndpointExecState(endpointExecState);
+	if (endpointCreated)
+		DestroyEndpointExecState();
 
 	if (sendTuples)
 		dest->rShutdown(dest);
