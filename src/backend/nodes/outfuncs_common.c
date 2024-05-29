@@ -250,7 +250,6 @@ _outQueryDispatchDesc(StringInfo str, const QueryDispatchDesc *node)
 	WRITE_OID_FIELD(tableid);
 	WRITE_INT_FIELD(snaplen);
 	WRITE_STRING_FIELD(snapname);
-	WRITE_NODE_FIELD(tags);
 }
 
 static void
